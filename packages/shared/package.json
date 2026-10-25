@@ -1,0 +1,21 @@
+{
+  "name": "@fabrica/shared",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Regras de negócio puras e schemas Zod compartilhados entre web e api",
+  "type": "module",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": { ".": "./src/index.ts" },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "zod": "3.25.76"
+  },
+  "devDependencies": {
+    "typescript": "5.9.3",
+    "vitest": "4.0.5"
+  }
+}

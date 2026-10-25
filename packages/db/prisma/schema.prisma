@@ -1,0 +1,371 @@
+// A Fábrica Mágica - Sistema de Locação Premium
+// Valores monetários sempre em centavos (Int). Datas de evento em @db.Date (dia civil).
+// Toda tabela de negócio carrega tenantId: hoje single-tenant, pronto para franquia.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  SUPER_ADMIN
+  ATENDENTE
+  CLIENTE
+  PERSONAGEM
+}
+
+enum ThemeStatus {
+  ATIVO
+  MANUTENCAO
+  DESCONTINUADO
+}
+
+enum ReservationStatus {
+  PENDENTE
+  PAGO
+  EM_LOCACAO
+  DEVOLVIDO
+  ATRASADO
+  CANCELADO
+}
+
+enum DeliveryType {
+  RETIRADA
+  ENTREGA
+}
+
+enum DocumentKind {
+  RG_FRENTE
+  RG_VERSO
+  COMPROVANTE_RESIDENCIA
+  SELFIE
+}
+
+enum ScheduleKind {
+  RESERVA
+  BLOQUEIO
+}
+
+model Tenant {
+  id        String   @id @default(cuid())
+  name      String   @default("A Fábrica Mágica")
+  slug      String   @unique @default("afabricamagica")
+  whatsapp  String   @default("5521972848645")
+  branding  Json // { colors, logoUrl, slogan }
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  settings     TenantSettings?
+  users        User[]
+  themes       PartyTheme[]
+  characters   LiveCharacter[]
+  clients      Client[]
+  reservations Reservation[]
+  auditLogs    AuditLog[]
+}
+
+/// RF12 - Configurações de privacidade e regras comerciais do dono.
+model TenantSettings {
+  id                String   @id @default(cuid())
+  tenantId          String   @unique
+  tenant            Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  hostSensitiveDocs Boolean  @default(false) // TOGGLE DO DONO (RN05/RN06)
+  retentionDays     Int      @default(90) // 30, 90 ou 365
+  requireProof      Boolean  @default(true)
+  requireSelfie     Boolean  @default(false)
+  blockWithoutDocs  Boolean  @default(true)
+  weekendMultiplier Float    @default(1.3)
+  deliveryFeeBase   Int      @default(0) // centavos
+  lateFeePerDay     Int      @default(0) // centavos
+  updatedAt         DateTime @updatedAt
+}
+
+/// RF01 - Usuários com papel (RBAC). Cliente e personagem também fazem login.
+model User {
+  id           String    @id @default(cuid())
+  tenantId     String
+  tenant       Tenant    @relation(fields: [tenantId], references: [id])
+  email        String
+  passwordHash String // bcrypt
+  role         Role      @default(CLIENTE)
+  active       Boolean   @default(true)
+  lastLoginAt  DateTime?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  client        Client?
+  character     LiveCharacter?
+  refreshTokens RefreshToken[]
+
+  @@unique([tenantId, email])
+}
+
+/// Refresh tokens guardados como hash, com rotação e revogação.
+model RefreshToken {
+  id        String    @id @default(cuid())
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tokenHash String    @unique
+  expiresAt DateTime
+  revokedAt DateTime?
+  createdAt DateTime  @default(now())
+
+  @@index([userId])
+}
+
+/// RF02 - Tema de festa (estoque físico).
+model PartyTheme {
+  id                String      @id @default(cuid())
+  tenantId          String
+  tenant            Tenant      @relation(fields: [tenantId], references: [id])
+  name              String
+  slug              String
+  category          String // Balões, Setores, Halloween Premium, Locação Luxo, Sazonal
+  description       String
+  includedItems     String[]
+  sizeM2            Float?
+  dailyPrice        Int // centavos: 85000 = R$ 850
+  totalQty          Int         @default(1)
+  weekendMultiplier Float? // sobrescreve o do tenant
+  photos            String[]
+  status            ThemeStatus @default(ATIVO)
+  isBestseller      Boolean     @default(false)
+  isNew             Boolean     @default(false)
+  createdAt         DateTime    @default(now())
+  updatedAt         DateTime    @updatedAt
+  deletedAt         DateTime?
+
+  reservations ReservationTheme[]
+  favorites    Favorite[]
+  damages      DamageReport[]
+
+  @@unique([tenantId, slug])
+  @@index([tenantId, category])
+  @@index([tenantId, status])
+}
+
+/// RF03 - Personagem vivo (prestador).
+model LiveCharacter {
+  id             String    @id @default(cuid())
+  tenantId       String
+  tenant         Tenant    @relation(fields: [tenantId], references: [id])
+  userId         String?   @unique // login do prestador (PWA)
+  user           User?     @relation(fields: [userId], references: [id])
+  name           String
+  slug           String
+  description    String?
+  pricePer2h     Int // centavos
+  priceExtraHour Int // centavos
+  photos         String[]
+  active         Boolean   @default(true)
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  deletedAt      DateTime?
+
+  schedule     CharacterSchedule[]
+  reservations ReservationCharacter[]
+
+  @@unique([tenantId, slug])
+  @@index([tenantId])
+}
+
+/// RN03 - Agenda do personagem: reservas e bloqueios manuais.
+model CharacterSchedule {
+  id                     String                @id @default(cuid())
+  characterId            String
+  character              LiveCharacter         @relation(fields: [characterId], references: [id])
+  kind                   ScheduleKind          @default(RESERVA)
+  startsAt               DateTime
+  endsAt                 DateTime
+  reservationCharacterId String?               @unique
+  reservationCharacter   ReservationCharacter? @relation(fields: [reservationCharacterId], references: [id], onDelete: Cascade)
+  note                   String?
+  confirmedAt            DateTime? // personagem confirmou presença
+  checkedInAt            DateTime? // check-in no local da festa
+  createdAt              DateTime              @default(now())
+
+  @@index([characterId, startsAt, endsAt])
+}
+
+/// RF06 - Cadastro de locação. Documentos só existem se hostSensitiveDocs = true (RN05).
+model Client {
+  id               String    @id @default(cuid())
+  tenantId         String
+  tenant           Tenant    @relation(fields: [tenantId], references: [id])
+  userId           String?   @unique
+  user             User?     @relation(fields: [userId], references: [id])
+  name             String
+  cpf              String // só dígitos
+  rg               String
+  birthDate        DateTime  @db.Date
+  email            String
+  whatsapp         String
+  phone2           String?
+  address          Json
+  partyAddress     Json?
+  lgpdConsent      Boolean
+  lgpdConsentAt    DateTime?
+  contractAccepted Boolean
+  contractVersion  String?
+  docsVerifiedAt   DateTime? // verificação manual via WhatsApp ou upload
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+  deletedAt        DateTime? // LGPD - direito ao esquecimento
+
+  documents    ClientDocument[]
+  reservations Reservation[]
+  favorites    Favorite[]
+
+  // CPF único por tenant (o prompt pedia @unique global; por tenant permite franquia).
+  @@unique([tenantId, cpf])
+  @@index([tenantId, createdAt])
+}
+
+/// RN06 - Documento sensível criptografado. Nunca guarda URL pública, só a chave do objeto.
+model ClientDocument {
+  id          String       @id @default(cuid())
+  clientId    String
+  client      Client       @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  kind        DocumentKind
+  storageKey  String // chave no S3/R2 (objeto criptografado AES-256-GCM)
+  sha256      String
+  mimeType    String
+  sizeBytes   Int
+  iv          String // vetor de inicialização (base64)
+  authTag     String // tag GCM (base64)
+  retainUntil DateTime
+  createdAt   DateTime     @default(now())
+  deletedAt   DateTime?
+
+  @@unique([clientId, sha256])
+  @@index([retainUntil])
+}
+
+model Reservation {
+  id              String            @id @default(cuid())
+  code            String            @unique // código curto para o cliente, ex.: FM-7K2Q
+  tenantId        String
+  tenant          Tenant            @relation(fields: [tenantId], references: [id])
+  clientId        String
+  client          Client            @relation(fields: [clientId], references: [id])
+  eventDate       DateTime          @db.Date
+  returnDate      DateTime          @db.Date
+  deliveryType    DeliveryType
+  deliveryAddress Json?
+  subtotal        Int
+  weekendFee      Int               @default(0)
+  deliveryFee     Int               @default(0)
+  lateFee         Int               @default(0)
+  damageFee       Int               @default(0)
+  totalPrice      Int
+  status          ReservationStatus @default(PENDENTE)
+  holdExpiresAt   DateTime? // PENDENTE segura estoque até aqui (anti-overbooking)
+  paymentId       String?           @unique // Mercado Pago
+  pixQrCode       String?
+  paidAt          DateTime?
+  deliveredAt     DateTime? // check-in entrega
+  returnedAt      DateTime? // check-out devolução
+  cancelledAt     DateTime?
+  createdById     String? // atendente que criou reserva manual
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+
+  themes     ReservationTheme[]
+  characters ReservationCharacter[]
+  damages    DamageReport[]
+  payments   PaymentEvent[]
+
+  @@index([tenantId, status])
+  @@index([tenantId, eventDate, returnDate])
+  @@index([clientId])
+}
+
+model ReservationTheme {
+  id            String      @id @default(cuid())
+  reservationId String
+  reservation   Reservation @relation(fields: [reservationId], references: [id], onDelete: Cascade)
+  themeId       String
+  theme         PartyTheme  @relation(fields: [themeId], references: [id])
+  quantity      Int         @default(1)
+  unitPrice     Int // centavos no momento da compra
+  weekendFee    Int         @default(0)
+
+  @@index([themeId])
+  @@index([reservationId])
+}
+
+model ReservationCharacter {
+  id            String             @id @default(cuid())
+  reservationId String
+  reservation   Reservation        @relation(fields: [reservationId], references: [id], onDelete: Cascade)
+  characterId   String
+  character     LiveCharacter      @relation(fields: [characterId], references: [id])
+  startsAt      DateTime
+  extraHours    Int                @default(0)
+  price         Int // centavos
+  schedule      CharacterSchedule?
+
+  @@index([characterId, startsAt])
+  @@index([reservationId])
+}
+
+/// RN09 - Checklist de avaria na devolução.
+model DamageReport {
+  id            String      @id @default(cuid())
+  reservationId String
+  reservation   Reservation @relation(fields: [reservationId], references: [id], onDelete: Cascade)
+  themeId       String?
+  theme         PartyTheme? @relation(fields: [themeId], references: [id])
+  photos        String[]
+  note          String?
+  fee           Int         @default(0) // centavos
+  createdById   String
+  createdAt     DateTime    @default(now())
+
+  @@index([reservationId])
+}
+
+/// RN10 - Eventos do webhook Mercado Pago (idempotência e rastreabilidade).
+model PaymentEvent {
+  id            String      @id @default(cuid())
+  reservationId String
+  reservation   Reservation @relation(fields: [reservationId], references: [id], onDelete: Cascade)
+  provider      String      @default("MERCADOPAGO")
+  externalId    String // id do evento/notificação
+  status        String
+  amount        Int?
+  payload       Json
+  createdAt     DateTime    @default(now())
+
+  @@unique([provider, externalId])
+}
+
+model Favorite {
+  clientId  String
+  client    Client     @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  themeId   String
+  theme     PartyTheme @relation(fields: [themeId], references: [id], onDelete: Cascade)
+  createdAt DateTime   @default(now())
+
+  @@id([clientId, themeId])
+}
+
+/// Logs de acesso a documentos e ações críticas (RF12, LGPD).
+model AuditLog {
+  id        String   @id @default(cuid())
+  tenantId  String
+  tenant    Tenant   @relation(fields: [tenantId], references: [id])
+  action    String // ACCESS_DOC, VIEW_RESERVATION, UPDATE_SETTINGS, DELETE_CLIENT...
+  actorId   String
+  targetId  String
+  ip        String?
+  metadata  Json?
+  createdAt DateTime @default(now())
+
+  @@index([tenantId, action, createdAt])
+  @@index([targetId])
+}
