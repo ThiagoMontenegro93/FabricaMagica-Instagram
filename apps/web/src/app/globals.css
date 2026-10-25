@@ -1,0 +1,37 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --font-serif: "Playfair Display", "Cormorant Garamond", Georgia, "Times New Roman", serif;
+  --font-sans: "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  color-scheme: dark;
+}
+
+body {
+  @apply bg-night text-neutral-100 font-sans antialiased;
+}
+
+@layer components {
+  .card {
+    @apply rounded-2xl border border-white/5 bg-card p-6;
+  }
+  .field {
+    @apply w-full rounded-lg border border-white/10 bg-field px-3 py-2 text-neutral-100 outline-none transition placeholder:text-neutral-500 focus:border-gold focus:ring-1 focus:ring-gold;
+  }
+  .label {
+    @apply mb-1 block text-sm text-neutral-300;
+  }
+  .btn-gold {
+    @apply inline-flex items-center justify-center rounded-full bg-gradient-to-r from-orange-500 to-gold px-6 py-2.5 font-semibold text-black transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-50;
+  }
+  .btn-ghost {
+    @apply inline-flex items-center justify-center rounded-full border border-gold/40 px-6 py-2.5 text-gold transition hover:border-gold hover:bg-gold/10;
+  }
+  .alert-error {
+    @apply rounded-lg border border-red-500/40 bg-red-950/40 px-4 py-3 text-sm text-red-200;
+  }
+  .neon-frame {
+    @apply rounded-2xl border-2 border-neon-purple shadow-neon;
+  }
+}

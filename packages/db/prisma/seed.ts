@@ -3,6 +3,7 @@
  * um catálogo inicial de temas e personagens vivos. Preços são EXEMPLOS
  * e devem ser ajustados pelo dono no painel admin.
  */
+import bcrypt from "bcryptjs";
 import { PrismaClient } from "@prisma/client";
 
 const prisma = new PrismaClient();
@@ -94,7 +95,20 @@ async function main() {
     });
   }
 
-  console.log(JSON.stringify({ level: "info", action: "SEED_DONE", tenantId: tenant.id, themes: themes.length, characters: characters.length }));
+  // Dono (SUPER_ADMIN): criado só se ADMIN_EMAIL e ADMIN_PASSWORD estiverem no ambiente.
+  // A senha nunca é sobrescrita em execuções seguintes.
+  const adminEmail = process.env.ADMIN_EMAIL?.trim().toLowerCase();
+  const adminPassword = process.env.ADMIN_PASSWORD;
+  if (adminEmail && adminPassword) {
+    if (adminPassword.length < 12) throw new Error("ADMIN_PASSWORD precisa de ao menos 12 caracteres");
+    await prisma.user.upsert({
+      where: { tenantId_email: { tenantId: tenant.id, email: adminEmail } },
+      update: { role: "SUPER_ADMIN", active: true },
+      create: { tenantId: tenant.id, email: adminEmail, passwordHash: await bcrypt.hash(adminPassword, 12), role: "SUPER_ADMIN" },
+    });
+  }
+
+  console.log(JSON.stringify({ level: "info", action: "SEED_DONE", admin: Boolean(adminEmail && adminPassword), tenantId: tenant.id, themes: themes.length, characters: characters.length }));
 }
 
 main()

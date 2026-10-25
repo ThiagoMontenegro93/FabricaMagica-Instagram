@@ -27,7 +27,7 @@ Tirar a locação da Fábrica Mágica do WhatsApp/Instagram/planilha e levar par
 8. **Preços e catálogo do seed são exemplos.** O dono ajusta no painel.
 9. **Documentos desligados por padrão** (`hostSensitiveDocs = false`): modo econômico, validação via WhatsApp, menor exposição LGPD.
 
-## 4. Decisão em aberto: onde fica a API
+## 4. Decisão: a API fica dentro do Next.js (escolhida por Thiago em 25/10/2026)
 
 O prompt pede ao mesmo tempo "Base única Next.js 14 + Prisma" (item 1) e `apps/api -> NestJS` (item 11).
 
@@ -61,8 +61,8 @@ bcrypt, JWT access curto + refresh com rotação (hash no banco), Zod em toda bo
 | Sprint | Entrega | Status |
 |---|---|---|
 | 0 | Monorepo, regras puras + Zod, schema Prisma completo, migração, seed, CI | ✅ este PR |
-| 1 | Auth JWT + RBAC, TenantSettings com toggle, cadastro de cliente 18+ | próximo |
-| 2 | CRUD temas e personagens + estoque | |
+| 1 | Auth JWT + RBAC, TenantSettings com toggle, cadastro de cliente 18+ | ✅ PR #2 |
+| 2 | CRUD temas e personagens + estoque | próximo |
 | 3 | Agenda com bloqueio, taxa fds, carrinho | |
 | 4 | Uploads condicionais com hash e criptografia | |
 | 5 | Pix Mercado Pago + webhook | |
@@ -76,3 +76,9 @@ bcrypt, JWT access curto + refresh com rotação (hash no banco), Zod em toda bo
 | Webhook duplicado ou forjado | `PaymentEvent` único por `externalId` + validação da assinatura `x-signature` do Mercado Pago |
 | Vazamento de documentos | toggle desligado por padrão; quando ligado, criptografia, URL curta e auditoria |
 | Fotos do Instagram sem autorização de uso | usar só material fornecido pelo dono |
+
+## 9. Pendências conhecidas
+
+- Rate limit em memória vale por instância. Com mais de uma instância, trocar por Redis.
+- Textos completos da Política de Privacidade e do Contrato de Locação precisam vir do dono (o aceite já grava data e versão `2026-10-v1`).
+- Criação de atendentes e personagens pelo painel entra no Sprint 6; até lá o dono é criado pelo seed.

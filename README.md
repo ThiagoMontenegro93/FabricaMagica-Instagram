@@ -11,8 +11,7 @@ A especificação completa está em [`docs/ARQUITETURA.md`](docs/ARQUITETURA.md)
 
 ```
 apps/
-  web/        Next.js 14 (cliente + admin + PWA)        ← próximos sprints
-  api/        API (decisão pendente, ver docs)          ← próximos sprints
+  web/        Next.js 14: site do cliente, painel admin e a API (Route Handlers em src/app/api)
 packages/
   shared/     Regras de negócio puras + schemas Zod (CPF, 18+, preço, estoque, agenda)
   db/         Prisma: schema, migrações e seed do PostgreSQL
@@ -33,17 +32,45 @@ docker compose up -d          # Postgres 16 + Redis 7
 pnpm install
 pnpm db:generate
 pnpm db:deploy                # aplica as migrações
-pnpm db:seed                  # tenant Fábrica Mágica, configurações, temas e personagens de exemplo
+pnpm db:seed                  # tenant, configurações, temas, personagens e o dono (ADMIN_EMAIL/ADMIN_PASSWORD)
+pnpm --filter @fabrica/web dev   # http://localhost:3000
 ```
+
+Entre em `/login` com `ADMIN_EMAIL`/`ADMIN_PASSWORD` para abrir `/admin/configuracoes`.
 
 Com o docker compose, use `DATABASE_URL="postgresql://fabrica:fabrica_dev@localhost:5432/fabrica_magica?schema=public"`.
 
 ## Como testar
 
 ```bash
-pnpm test        # 26 testes das regras de negócio (vitest) + validação do schema Prisma
+pnpm test        # regras de negócio + testes de integração das rotas num Postgres real
 pnpm typecheck
 ```
+
+Os testes de integração apagam o banco: eles só rodam se o nome do banco em `DATABASE_URL` contiver `test`
+(ex.: `fabrica_magica_test`). Crie-o com `createdb fabrica_magica_test` e rode `pnpm db:deploy` apontando para ele.
+
+## API (Sprint 1)
+
+| Método | Rota | Quem | O que faz |
+|---|---|---|---|
+| POST | `/api/auth/register` | público | cria conta de CLIENTE e abre sessão |
+| POST | `/api/auth/login` | público | login (5/min por e-mail, 20/min por IP) |
+| POST | `/api/auth/refresh` | sessão | rotaciona o refresh token |
+| POST | `/api/auth/logout` | sessão | revoga o refresh |
+| GET | `/api/auth/me` | logado | usuário atual |
+| GET | `/api/tenant/public-settings` | público | WhatsApp e modo de documentos (upload ou WhatsApp) |
+| GET | `/api/tenant/settings` | dono, atendente | configurações |
+| PATCH | `/api/tenant/settings` | dono | toggle de documentos, retenção, taxa fds (auditado) |
+| POST | `/api/clients` | cliente, equipe | cadastro de locação 18+ |
+| GET | `/api/clients?q=` | dono, atendente | lista (atendente vê CPF mascarado) |
+| GET | `/api/admin/audit-logs` | dono | logs de acesso |
+| GET | `/api/health` | público | healthcheck do deploy |
+
+Sessão: access token JWT de 15 min e refresh opaco de 30 dias, ambos em cookie `httpOnly` `SameSite=Lax`.
+O PWA pode mandar `Authorization: Bearer`. POSTs de outra origem são recusados (anti-CSRF).
+
+Telas: [início](docs/screens/home.png), [cadastro com bloqueio 18+](docs/screens/cadastro-menor.png), [privacidade do dono](docs/screens/admin-privacidade.png).
 
 O CI (GitHub Actions) roda typecheck, testes, migrações num Postgres limpo e o seed duas vezes (idempotência).
 
@@ -67,6 +94,8 @@ O CI (GitHub Actions) roda typecheck, testes, migrações num Postgres limpo e o
 - **`Environment variable not found: DATABASE_URL`**: crie o `.env` na raiz e exporte a variável, ou rode os comandos com `DATABASE_URL=... pnpm db:deploy`.
 - **`P1001 Can't reach database server`**: o Postgres não está de pé; rode `docker compose up -d` e aguarde o healthcheck.
 - **`@prisma/client did not initialize yet`**: rode `pnpm db:generate`.
+- **`JWT_SECRET ausente ou curto`**: gere um com `openssl rand -base64 48` e coloque no `.env`.
+- **Testes recusam rodar**: o banco de `DATABASE_URL` precisa ter `test` no nome.
 
 ## Segurança
 
