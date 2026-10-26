@@ -22,10 +22,15 @@ export const BRAND_COLORS = {
 export const ROLES = ["SUPER_ADMIN", "ATENDENTE", "CLIENTE", "PERSONAGEM"] as const;
 export type Role = (typeof ROLES)[number];
 
+/**
+ * Categorias sugeridas. O catálogo não tem limite: o dono pode criar quantos
+ * temas quiser e usar outras categorias além destas.
+ */
 export const THEME_CATEGORIES = [
+  "Personagens e Filmes",
+  "Halloween Premium",
   "Balões",
   "Setores",
-  "Halloween Premium",
   "Locação Luxo",
   "Sazonal",
 ] as const;

@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { RETENTION_OPTIONS } from "@fabrica/shared";
+import { centsToReais, reaisToCents } from "@/lib/money";
 import { api, ApiError } from "@/lib/api";
 
 interface Settings {
@@ -11,6 +12,7 @@ interface Settings {
   requireSelfie: boolean;
   blockWithoutDocs: boolean;
   weekendMultiplier: number;
+  deliveryFeeBase: number;
 }
 
 interface Log {
@@ -94,6 +96,23 @@ export default function ConfiguracoesPage() {
             Modo econômico: sem armazenamento sensível, validação via WhatsApp. Menor responsabilidade LGPD.
           </p>
         )}
+      </section>
+
+      <section className="card space-y-3">
+        <h2 className="font-serif text-2xl text-white">Frete</h2>
+        <label className="label" htmlFor="frete">Valor cobrado do contratante para entregar e buscar o tema (R$)</label>
+        <input
+          id="frete"
+          className="field max-w-[10rem]"
+          inputMode="decimal"
+          key={settings.deliveryFeeBase}
+          defaultValue={centsToReais(settings.deliveryFeeBase)}
+          disabled={!canEdit}
+          onBlur={(e) => {
+            const v = reaisToCents(e.target.value);
+            if (Number.isFinite(v) && v >= 0) setSettings({ ...settings, deliveryFeeBase: v });
+          }}
+        />
       </section>
 
       <section className="card space-y-3">

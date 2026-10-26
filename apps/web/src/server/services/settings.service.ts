@@ -9,6 +9,7 @@ const SETTINGS_FIELDS = {
   requireSelfie: true,
   blockWithoutDocs: true,
   weekendMultiplier: true,
+  deliveryFeeBase: true,
   updatedAt: true,
 } as const;
 
@@ -21,7 +22,7 @@ export async function getPublicSettings(tenantId: string) {
   const [settings, tenant] = await Promise.all([
     prisma.tenantSettings.findUniqueOrThrow({
       where: { tenantId },
-      select: { hostSensitiveDocs: true, requireProof: true, requireSelfie: true },
+      select: { hostSensitiveDocs: true, requireProof: true, requireSelfie: true, deliveryFeeBase: true },
     }),
     prisma.tenant.findUniqueOrThrow({ where: { id: tenantId }, select: { name: true, whatsapp: true } }),
   ]);
@@ -30,6 +31,7 @@ export async function getPublicSettings(tenantId: string) {
     whatsapp: tenant.whatsapp,
     whatsappLink: whatsappLink(undefined, tenant.whatsapp),
     slogan: FABRICA_MAGICA.slogan,
+    deliveryFee: settings.deliveryFeeBase,
     documents: settings.hostSensitiveDocs
       ? { mode: "UPLOAD" as const, requireProof: settings.requireProof, requireSelfie: settings.requireSelfie }
       : { mode: "WHATSAPP" as const },

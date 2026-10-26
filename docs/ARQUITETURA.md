@@ -62,8 +62,8 @@ bcrypt, JWT access curto + refresh com rotação (hash no banco), Zod em toda bo
 |---|---|---|
 | 0 | Monorepo, regras puras + Zod, schema Prisma completo, migração, seed, CI | ✅ este PR |
 | 1 | Auth JWT + RBAC, TenantSettings com toggle, cadastro de cliente 18+ | ✅ PR #2 |
-| 2 | CRUD temas e personagens + estoque | próximo |
-| 3 | Agenda com bloqueio, taxa fds, carrinho | |
+| 2 | Catálogo sem limite de temas (6 iniciais), personagens, estoque por data | ✅ PR #3 |
+| 3 | Agenda com bloqueio, taxa fds, carrinho | próximo |
 | 4 | Uploads condicionais com hash e criptografia | |
 | 5 | Pix Mercado Pago + webhook | |
 | 6 | Painel admin (vendas, estoque, privacidade, logs) + PWA | |
@@ -81,4 +81,7 @@ bcrypt, JWT access curto + refresh com rotação (hash no banco), Zod em toda bo
 
 - Rate limit em memória vale por instância. Com mais de uma instância, trocar por Redis.
 - Textos completos da Política de Privacidade e do Contrato de Locação precisam vir do dono (o aceite já grava data e versão `2026-10-v1`).
+- Mídia local (`STORAGE_DRIVER=local`) só serve em VPS com disco persistente; no Railway/Render configurar R2 (`STORAGE_DRIVER=s3`).
+- Duração do vídeo (30 s) é conferida no navegador; o servidor limita por tamanho (40 MB). Conferência no servidor exigiria ffprobe.
+- Busca do catálogo diferencia acento ("leao" não acha "Leão"); resolver com a extensão `unaccent` do Postgres.
 - Criação de atendentes e personagens pelo painel entra no Sprint 6; até lá o dono é criado pelo seed.

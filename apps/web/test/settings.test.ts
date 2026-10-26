@@ -62,6 +62,15 @@ describe("RF12 - Configurações de privacidade", () => {
     expect((await auditLogs(req("/api/admin/audit-logs", { cookies: { fm_access: atendente } }), ctx)).status).toBe(403);
   });
 
+  it("frete: o dono define e o site público recebe o valor", async () => {
+    const admin = await session(ADMIN);
+    const ok = await patchSettings(req("/api/tenant/settings", { method: "PATCH", body: { deliveryFeeBase: 40000 }, cookies: { fm_access: admin } }), ctx);
+    expect((await ok.json()).settings.deliveryFeeBase).toBe(40000);
+    expect((await (await publicSettings(req("/api/tenant/public-settings"), ctx)).json()).deliveryFee).toBe(40000);
+    const bad = await patchSettings(req("/api/tenant/settings", { method: "PATCH", body: { deliveryFeeBase: 400.5 }, cookies: { fm_access: admin } }), ctx);
+    expect(bad.status).toBe(400);
+  });
+
   it("valida retenção (30/90/365) e multiplicador", async () => {
     const admin = await session(ADMIN);
     const bad = await patchSettings(req("/api/tenant/settings", { method: "PATCH", body: { retentionDays: 45 }, cookies: { fm_access: admin } }), ctx);

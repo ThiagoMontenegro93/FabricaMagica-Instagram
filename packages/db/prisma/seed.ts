@@ -24,38 +24,69 @@ const branding = {
   logoUrl: null,
 };
 
+/**
+ * Temas iniciais pedidos pelo Thiago (destaques do Instagram).
+ * O catálogo não tem limite: novos temas são cadastrados pelo dono em /admin/temas.
+ * Preços simbólicos definidos pelo Thiago (faixa R$ 1.200 a R$ 2.500); itens são exemplos.
+ * Ajustar no painel antes de abrir as reservas.
+ */
 const themes = [
   {
-    slug: "mansao-dracula-nocturne",
-    name: "Mansão Drácula Nocturne",
-    category: "Halloween Premium",
-    description: "Cenário gótico com candelabros, veludo vinho e caixão cenográfico para uma noite de luxo sombrio.",
-    includedItems: ["Painel gótico 3x2m", "Mesa imperial", "2 candelabros", "Caixão cenográfico", "Tapete vinho"],
-    sizeM2: 12,
-    dailyPrice: 85000,
-    totalQty: 2,
+    slug: "o-rei-leao",
+    name: "O Rei Leão",
+    category: "Personagens e Filmes",
+    description: "A savana africana na sua festa: Pedra do Reino, folhagens tropicais e os personagens que todo mundo ama.",
+    includedItems: ["Painel Pedra do Reino", "Mesa principal", "Folhagens tropicais", "Bonecos decorativos"],
+    dailyPrice: 150000,
+    totalQty: 1,
     isBestseller: true,
   },
   {
-    slug: "bruxaria-de-luxo",
-    name: "Bruxaria de Luxo",
-    category: "Halloween Premium",
-    description: "Caldeirões, grimórios e névoa roxa: o ateliê de uma bruxa elegante em detalhes dourados.",
-    includedItems: ["Painel redondo", "Caldeirão LED", "Grimórios", "Arco de balões roxo e preto"],
-    sizeM2: 9,
-    dailyPrice: 65000,
-    totalQty: 2,
+    slug: "harry-potter",
+    name: "Harry Potter",
+    category: "Personagens e Filmes",
+    description: "Um salão de Hogwarts com velas, brasões das casas e magia em cada detalhe.",
+    includedItems: ["Painel Hogwarts", "Mesa com brasões das quatro casas", "Velas cenográficas", "Elfo decorativo"],
+    dailyPrice: 220000,
+    totalQty: 1,
+  },
+  {
+    slug: "mickey-mouse",
+    name: "Mickey Mouse",
+    category: "Personagens e Filmes",
+    description: "O clássico Mickey feiticeiro com chapéu de estrelas, cores vibrantes e muita alegria.",
+    includedItems: ["Painel Mickey", "Mesa principal", "Arco de balões vermelho, preto e amarelo", "Boneco decorativo"],
+    dailyPrice: 120000,
+    totalQty: 1,
+  },
+  {
+    slug: "mundo-disney",
+    name: "Mundo Disney",
+    category: "Personagens e Filmes",
+    description: "Castelo, fogos e personagens Disney para uma festa encantada do começo ao fim.",
+    includedItems: ["Painel castelo", "Mesa principal", "Iluminação colorida", "Personagens decorativos"],
+    dailyPrice: 180000,
+    totalQty: 1,
     isNew: true,
   },
   {
-    slug: "arco-baloes-neon",
-    name: "Arco de Balões Neon",
-    category: "Balões",
-    description: "Arco orgânico em balões preto, roxo e laranja com toque neon para qualquer festa sombria.",
-    includedItems: ["Arco orgânico 3m", "Balões metalizados", "Estrutura"],
-    sizeM2: 4,
-    dailyPrice: 32000,
-    totalQty: 4,
+    slug: "halloween",
+    name: "Halloween",
+    category: "Halloween Premium",
+    description: "Fantasmas, abóboras e névoa: o Halloween de luxo que é a marca registrada da Fábrica Mágica.",
+    includedItems: ["Painel gótico", "Fantasma gigante", "Abóboras iluminadas", "Mesa principal"],
+    dailyPrice: 250000,
+    totalQty: 1,
+    isBestseller: true,
+  },
+  {
+    slug: "a-bela-e-a-fera",
+    name: "A Bela e a Fera",
+    category: "Personagens e Filmes",
+    description: "O castelo encantado da Fera com rosa sob a redoma, candelabros e detalhes em azul e dourado.",
+    includedItems: ["Painel salão de baile", "Mesa imperial", "Rosa encantada com redoma", "Candelabros"],
+    dailyPrice: 200000,
+    totalQty: 1,
   },
 ];
 
@@ -76,7 +107,8 @@ async function main() {
   await prisma.tenantSettings.upsert({
     where: { tenantId: tenant.id },
     update: {},
-    create: { tenantId: tenant.id }, // hostSensitiveDocs = false por padrão (modo econômico LGPD)
+    // hostSensitiveDocs = false por padrão (modo econômico LGPD); frete de R$ 400 cobrado do contratante.
+    create: { tenantId: tenant.id, deliveryFeeBase: 40000 },
   });
 
   for (const t of themes) {

@@ -131,7 +131,10 @@ model PartyTheme {
   dailyPrice        Int // centavos: 85000 = R$ 850
   totalQty          Int         @default(1)
   weekendMultiplier Float? // sobrescreve o do tenant
-  photos            String[]
+  photos            String[] // a primeira é a capa
+  videoUrl          String? // vídeo curto (até 30 s)
+  gifUrl            String? // GIF animado
+  deliveryFee       Int? // frete próprio do tema em centavos; null = padrão da loja
   status            ThemeStatus @default(ATIVO)
   isBestseller      Boolean     @default(false)
   isNew             Boolean     @default(false)
@@ -352,6 +355,21 @@ model Favorite {
   createdAt DateTime   @default(now())
 
   @@id([clientId, themeId])
+}
+
+/// Arquivos públicos do catálogo (fotos, vídeos, GIFs) enviados pela equipe.
+model MediaAsset {
+  id         String   @id @default(cuid())
+  tenantId   String
+  key        String   @unique // caminho no armazenamento (local ou S3/R2)
+  url        String // URL pública usada nos temas
+  mimeType   String
+  sizeBytes  Int
+  sha256     String
+  uploadedBy String
+  createdAt  DateTime @default(now())
+
+  @@index([tenantId, sha256])
 }
 
 /// Logs de acesso a documentos e ações críticas (RF12, LGPD).
