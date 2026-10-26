@@ -19,7 +19,7 @@ const GIF = new Uint8Array([..."GIF89a"].map((c) => c.charCodeAt(0)).concat(new 
 const MP4 = new Uint8Array([0, 0, 0, 0x20, ..."ftypisom"].map((c) => (typeof c === "string" ? c.charCodeAt(0) : c)).concat(new Array(500).fill(3)));
 const HTML = new TextEncoder().encode("<html><script>alert(1)</script></html>".padEnd(200, " "));
 
-function uploadReq(bytes: Uint8Array, name: string, token: string, kind?: string) {
+function uploadReq(bytes: Uint8Array<ArrayBuffer>, name: string, token: string, kind?: string) {
   const form = new FormData();
   form.append("file", new File([bytes], name, { type: "image/jpeg" }));
   if (kind) form.append("kind", kind);
