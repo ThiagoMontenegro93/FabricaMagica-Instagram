@@ -1,6 +1,8 @@
 import { z } from "zod";
 import {
+  DEAL_TYPES,
   DELIVERY_TYPES,
+  OFFER_MODES,
   MIN_AGE_MESSAGE,
   RESERVATION_STATUSES,
   RETENTION_OPTIONS,
@@ -80,7 +82,7 @@ export type ClientInput = z.input<typeof ClientSchema>;
 export type Client = z.output<typeof ClientSchema>;
 
 // --- Configurações de privacidade (RF12) ---
-export const TenantSettingsSchema = z.object({
+const TenantSettingsBase = z.object({
   hostSensitiveDocs: z.boolean(),
   retentionDays: z
     .number()
@@ -92,13 +94,23 @@ export const TenantSettingsSchema = z.object({
   weekendMultiplier: z.number().min(1).max(3),
   /** Frete cobrado do contratante quando a equipe entrega e busca o tema (centavos). */
   deliveryFeeBase: cents.max(1_000_000),
+  /** Como os temas sem configuração própria aparecem no site. */
+  defaultOfferMode: z.enum(OFFER_MODES),
+  /** Cliente pode retirar na loja e cuidar do transporte (sem frete). */
+  allowPickup: z.boolean(),
+  /** Loja entrega e busca, cobrando frete. */
+  allowDelivery: z.boolean(),
 });
-export const TenantSettingsPatchSchema = TenantSettingsSchema.partial();
+const atLeastOneDelivery = (s: { allowPickup?: boolean; allowDelivery?: boolean }) =>
+  s.allowPickup !== false || s.allowDelivery !== false;
+const deliveryMessage = { path: ["allowDelivery"], message: "Deixe ao menos uma forma de entrega: retirada ou entrega" };
+export const TenantSettingsSchema = TenantSettingsBase.refine(atLeastOneDelivery, deliveryMessage);
+export const TenantSettingsPatchSchema = TenantSettingsBase.partial().refine(atLeastOneDelivery, deliveryMessage);
 
 // --- Catálogo (RF02, RF03) ---
 const photoUrl = z.string().trim().max(500).refine(isMediaUrl, "Use um link https ou um arquivo enviado");
 
-export const PartyThemeSchema = z.object({
+const PartyThemeBase = z.object({
   name: z.string().trim().min(3, "Nome com ao menos 3 letras").max(80),
   /** Categoria livre: as sugestões ficam em THEME_CATEGORIES. */
   category: z.string().trim().min(2, "Informe a categoria").max(40),
@@ -114,11 +126,37 @@ export const PartyThemeSchema = z.object({
   gifUrl: photoUrl.nullable().optional(),
   /** Frete próprio do tema (centavos); null usa o frete padrão da loja. */
   deliveryFee: cents.max(1_000_000).nullable().optional(),
+  /** null = segue o padrão da loja. */
+  offerMode: z.enum(OFFER_MODES).nullable().optional(),
+  /** Preço de venda em centavos; obrigatório quando o tema é vendido. */
+  salePrice: cents.max(100_000_000).nullable().optional(),
+  /** Unidades à venda (a venda baixa daqui, não dos kits de aluguel). */
+  saleQty: z.number().int().min(0).max(1000).default(0),
+  /** null = segue o padrão da loja. */
+  allowPickup: z.boolean().nullable().optional(),
+  allowDelivery: z.boolean().nullable().optional(),
   status: z.enum(THEME_STATUSES).default("ATIVO"),
   isBestseller: z.boolean().default(false),
   isNew: z.boolean().default(false),
 });
-export const PartyThemePatchSchema = PartyThemeSchema.partial();
+
+type ThemeOfferCheck = { offerMode?: string | null; salePrice?: number | null; allowPickup?: boolean | null; allowDelivery?: boolean | null };
+/** Regras de oferta checadas também no serviço, após juntar com o tema salvo. */
+export function themeOfferIssues(t: ThemeOfferCheck): { path: string; message: string }[] {
+  const issues: { path: string; message: string }[] = [];
+  if ((t.offerMode === "VENDA" || t.offerMode === "AMBOS") && t.salePrice == null) {
+    issues.push({ path: "salePrice", message: "Informe o preço de venda para vender este tema" });
+  }
+  if (t.allowPickup === false && t.allowDelivery === false) {
+    issues.push({ path: "allowDelivery", message: "Deixe ao menos uma forma de entrega: retirada ou entrega" });
+  }
+  return issues;
+}
+const offerRefine = (t: ThemeOfferCheck, ctx: z.RefinementCtx) => {
+  for (const i of themeOfferIssues(t)) ctx.addIssue({ code: z.ZodIssueCode.custom, path: [i.path], message: i.message });
+};
+export const PartyThemeSchema = PartyThemeBase.superRefine(offerRefine);
+export const PartyThemePatchSchema = PartyThemeBase.partial().superRefine(offerRefine);
 
 export const LiveCharacterSchema = z.object({
   name: z.string().trim().min(3).max(80),
@@ -148,6 +186,8 @@ export const CatalogQuerySchema = z.object({
   q: z.string().trim().max(80).optional(),
   availableOn: isoDate.optional(),
   returnOn: isoDate.optional(),
+  /** aluguel = temas que podem ser alugados; venda = temas à venda. */
+  tipo: z.enum(["aluguel", "venda"]).optional(),
 });
 
 // --- Reserva (RF04, RF05) ---
@@ -155,6 +195,7 @@ export const ReservationRequestSchema = z
   .object({
     eventDate: isoDate,
     returnDate: isoDate,
+    dealType: z.enum(DEAL_TYPES).default("ALUGUEL"),
     deliveryType: z.enum(DELIVERY_TYPES),
     deliveryAddress: AddressSchema.optional(),
     themes: z.array(z.object({ themeId: z.string().min(1), quantity: z.number().int().min(1).default(1) })).default([]),

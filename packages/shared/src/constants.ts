@@ -52,6 +52,25 @@ export type ReservationStatus = (typeof RESERVATION_STATUSES)[number];
 export const DELIVERY_TYPES = ["RETIRADA", "ENTREGA"] as const;
 export type DeliveryType = (typeof DELIVERY_TYPES)[number];
 
+/** Como um tema é oferecido no site: só aluguel, só venda ou os dois. */
+export const OFFER_MODES = ["ALUGUEL", "VENDA", "AMBOS"] as const;
+export type OfferMode = (typeof OFFER_MODES)[number];
+
+/** O que o cliente escolheu fazer com o tema. */
+export const DEAL_TYPES = ["ALUGUEL", "VENDA"] as const;
+export type DealType = (typeof DEAL_TYPES)[number];
+
+export const OFFER_MODE_LABELS: Record<OfferMode, string> = {
+  ALUGUEL: "Só aluguel",
+  VENDA: "Só venda",
+  AMBOS: "Aluguel e venda",
+};
+
+export const DELIVERY_LABELS: Record<DeliveryType, string> = {
+  RETIRADA: "Retiro na loja (transporte por minha conta, sem frete)",
+  ENTREGA: "A loja entrega e monta (com frete)",
+};
+
 export const RETENTION_OPTIONS = [30, 90, 365] as const;
 
 /** Duração base de um personagem vivo (RN03). */

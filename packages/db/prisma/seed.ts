@@ -78,6 +78,10 @@ const themes = [
     dailyPrice: 250000,
     totalQty: 1,
     isBestseller: true,
+    // Exemplo de tema que também é vendido (preço de venda simbólico).
+    offerMode: "AMBOS" as const,
+    salePrice: 900000,
+    saleQty: 1,
   },
   {
     slug: "a-bela-e-a-fera",

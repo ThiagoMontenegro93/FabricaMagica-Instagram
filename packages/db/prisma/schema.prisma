@@ -33,6 +33,18 @@ enum ReservationStatus {
   CANCELADO
 }
 
+/// Como um tema é negociado no site.
+enum OfferMode {
+  ALUGUEL
+  VENDA
+  AMBOS
+}
+
+enum DealType {
+  ALUGUEL
+  VENDA
+}
+
 enum DeliveryType {
   RETIRADA
   ENTREGA
@@ -80,6 +92,9 @@ model TenantSettings {
   blockWithoutDocs  Boolean  @default(true)
   weekendMultiplier Float    @default(1.3)
   deliveryFeeBase   Int      @default(0) // centavos
+  defaultOfferMode  OfferMode @default(ALUGUEL) // padrão para temas sem configuração própria
+  allowPickup       Boolean  @default(true) // cliente retira e cuida do transporte (sem frete)
+  allowDelivery     Boolean  @default(true) // loja entrega e busca (cobra frete)
   lateFeePerDay     Int      @default(0) // centavos
   updatedAt         DateTime @updatedAt
 }
@@ -135,6 +150,11 @@ model PartyTheme {
   videoUrl          String? // vídeo curto (até 30 s)
   gifUrl            String? // GIF animado
   deliveryFee       Int? // frete próprio do tema em centavos; null = padrão da loja
+  offerMode         OfferMode? // null = padrão da loja
+  salePrice         Int? // preço de venda em centavos (obrigatório se vende)
+  saleQty           Int         @default(0) // unidades disponíveis para venda
+  allowPickup       Boolean? // null = padrão da loja
+  allowDelivery     Boolean? // null = padrão da loja
   status            ThemeStatus @default(ATIVO)
   isBestseller      Boolean     @default(false)
   isNew             Boolean     @default(false)
@@ -257,6 +277,7 @@ model Reservation {
   client          Client            @relation(fields: [clientId], references: [id])
   eventDate       DateTime          @db.Date
   returnDate      DateTime          @db.Date
+  dealType        DealType          @default(ALUGUEL)
   deliveryType    DeliveryType
   deliveryAddress Json?
   subtotal        Int

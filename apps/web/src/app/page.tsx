@@ -8,16 +8,24 @@ import { listCharacters } from "@/server/services/character.service";
 
 export const dynamic = "force-dynamic";
 
-export default async function Home({ searchParams }: { searchParams: { categoria?: string; data?: string; q?: string } }) {
+function deliveryNote(s: { allowPickup: boolean; allowDelivery: boolean; deliveryFeeBase: number }) {
+  const fee = s.deliveryFeeBase > 0 ? ` por ${formatBRL(s.deliveryFeeBase)} de frete` : "";
+  if (s.allowPickup && s.allowDelivery) return ` Retire na loja sem frete ou receba com a nossa equipe${fee}.`;
+  if (s.allowDelivery) return ` A nossa equipe entrega e monta${fee}.`;
+  return " Retirada na loja, transporte por conta do cliente.";
+}
+
+export default async function Home({ searchParams }: { searchParams: { categoria?: string; data?: string; q?: string; tipo?: string } }) {
   const tenant = await currentTenant();
   const date = searchParams.data && isValidIsoDate(searchParams.data) ? searchParams.data : undefined;
+  const tipo = searchParams.tipo === "aluguel" || searchParams.tipo === "venda" ? searchParams.tipo : undefined;
   const [catalog, characters] = await Promise.all([
-    listThemes(tenant.id, { category: searchParams.categoria, availableOn: date, q: searchParams.q }),
+    listThemes(tenant.id, { category: searchParams.categoria, availableOn: date, q: searchParams.q, tipo }),
     listCharacters(tenant.id),
   ]);
   const qs = (patch: Record<string, string | undefined>) => {
     const p = new URLSearchParams();
-    const merged = { categoria: searchParams.categoria, data: date, q: searchParams.q, ...patch };
+    const merged = { categoria: searchParams.categoria, data: date, q: searchParams.q, tipo, ...patch };
     for (const [k, v] of Object.entries(merged)) if (v) p.set(k, v);
     const s = p.toString();
     return s ? `/?${s}#temas` : "/#temas";
@@ -46,11 +54,12 @@ export default async function Home({ searchParams }: { searchParams: { categoria
             <h2 className="font-serif text-3xl text-white">Temas</h2>
             <p className="text-sm text-neutral-400">
               Escolha a data da festa para ver o que está livre.
-              {tenant.settings.deliveryFeeBase > 0 && ` Frete de ${formatBRL(tenant.settings.deliveryFeeBase)} para entrega e retirada.`}
+              {deliveryNote(tenant.settings)}
             </p>
           </div>
           <form className="flex flex-wrap items-end gap-2" action="/#temas">
             {searchParams.categoria && <input type="hidden" name="categoria" value={searchParams.categoria} />}
+            {tipo && <input type="hidden" name="tipo" value={tipo} />}
             <div>
               <label className="label" htmlFor="q">Buscar</label>
               <input id="q" name="q" defaultValue={searchParams.q} placeholder="Ex.: Mickey" className="field w-40" />
@@ -62,6 +71,22 @@ export default async function Home({ searchParams }: { searchParams: { categoria
             <button className="btn-gold">Filtrar</button>
           </form>
         </div>
+
+        <nav className="flex flex-wrap gap-2" aria-label="Alugar ou comprar">
+          {([
+            [undefined, "Alugar e comprar"],
+            ["aluguel", "Para alugar"],
+            ["venda", "À venda"],
+          ] as const).map(([value, label]) => (
+            <Link
+              key={label}
+              href={qs({ tipo: value })}
+              className={`rounded-full border px-4 py-1.5 text-sm ${tipo === value ? "border-neon-purple bg-neon-purple/20 text-white" : "border-white/10 text-neutral-300 hover:border-neon-purple/60"}`}
+            >
+              {label}
+            </Link>
+          ))}
+        </nav>
 
         <nav className="flex flex-wrap gap-2" aria-label="Categorias">
           <Link href={qs({ categoria: undefined })} className={`rounded-full border px-4 py-1.5 text-sm ${!searchParams.categoria ? "border-gold text-gold" : "border-white/10 text-neutral-300 hover:border-gold/50"}`}>

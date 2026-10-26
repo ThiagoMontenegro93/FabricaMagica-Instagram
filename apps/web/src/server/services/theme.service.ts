@@ -4,7 +4,10 @@ import {
   PartyThemePatchSchema,
   PartyThemeSchema,
   availableThemeQty,
+  resolveOffer,
   slugify,
+  themeOfferIssues,
+  type OfferDefaults,
   type ReservationStatus,
   type Role,
   type StockReservation,
@@ -27,6 +30,11 @@ const PUBLIC_FIELDS = {
   videoUrl: true,
   gifUrl: true,
   deliveryFee: true,
+  offerMode: true,
+  salePrice: true,
+  saleQty: true,
+  allowPickup: true,
+  allowDelivery: true,
   status: true,
   isBestseller: true,
   isNew: true,
@@ -84,6 +92,13 @@ export async function themeAvailability(
   );
 }
 
+async function offerDefaults(tenantId: string): Promise<OfferDefaults> {
+  return prisma.tenantSettings.findUniqueOrThrow({
+    where: { tenantId },
+    select: { defaultOfferMode: true, allowPickup: true, allowDelivery: true, deliveryFeeBase: true },
+  });
+}
+
 /** RF02 / RF14: catálogo com busca, categoria e disponibilidade na data. */
 export async function listThemes(tenantId: string, rawQuery: unknown, opts: { includeHidden?: boolean } = {}) {
   const query = CatalogQuerySchema.parse(rawQuery);
@@ -120,8 +135,21 @@ export async function listThemes(tenantId: string, rawQuery: unknown, opts: { in
     availability = await themeAvailability(themes, period);
   }
 
+  const defaults = await offerDefaults(tenantId);
+  const items = themes
+    .map((t) => ({
+      ...t,
+      offer: resolveOffer(t, defaults),
+      availableQty: availability ? (availability.get(t.id) ?? 0) : null,
+    }))
+    .filter((t) => {
+      if (query.tipo === "aluguel") return t.offer.deals.includes("ALUGUEL");
+      if (query.tipo === "venda") return t.offer.deals.includes("VENDA") && t.saleQty > 0;
+      return true;
+    });
+
   return {
-    items: themes.map((t) => ({ ...t, availableQty: availability ? (availability.get(t.id) ?? 0) : null })),
+    items,
     categories: categories.map((c) => ({ name: c.category, count: c._count })),
   };
 }
@@ -137,7 +165,12 @@ export async function getTheme(tenantId: string, idOrSlug: string, opts: { inclu
     select: PUBLIC_FIELDS,
   });
   if (!theme) throw Errors.notFound("Tema não encontrado");
-  return theme;
+  return { ...theme, offer: resolveOffer(theme, await offerDefaults(tenantId)) };
+}
+
+function assertOffer(t: Parameters<typeof themeOfferIssues>[0]) {
+  const issue = themeOfferIssues(t)[0];
+  if (issue) throw Errors.badRequest(issue.message, { path: issue.path });
 }
 
 /** Gera slug único: "harry-potter", "harry-potter-2"... */
@@ -156,12 +189,13 @@ async function uniqueSlug(tenantId: string, name: string, ignoreId?: string) {
 
 export async function createTheme(tenantId: string, actorId: string, input: unknown, ip?: string) {
   const data = PartyThemeSchema.parse(input);
+  assertOffer(data);
   const theme = await prisma.partyTheme.create({
     data: { ...data, tenantId, slug: await uniqueSlug(tenantId, data.name) },
     select: PUBLIC_FIELDS,
   });
   await audit({ tenantId, action: "THEME_CREATE", actorId, targetId: theme.id, ip, metadata: { name: theme.name } });
-  return theme;
+  return { ...theme, offer: resolveOffer(theme, await offerDefaults(tenantId)) };
 }
 
 /**
@@ -180,12 +214,17 @@ export async function updateTheme(
     const keys = Object.keys(patch);
     if (keys.some((k) => k !== "status")) throw Errors.forbidden("Atendente só pode alterar o status do tema");
   }
-  const current = await prisma.partyTheme.findFirst({ where: { id, tenantId, deletedAt: null }, select: { id: true } });
+  const current = await prisma.partyTheme.findFirst({
+    where: { id, tenantId, deletedAt: null },
+    select: { id: true, offerMode: true, salePrice: true, allowPickup: true, allowDelivery: true },
+  });
   if (!current) throw Errors.notFound("Tema não encontrado");
+  // A regra vale para o tema inteiro: ex. tirar o preço de venda de um tema que vende.
+  assertOffer({ ...current, ...patch });
 
   const theme = await prisma.partyTheme.update({ where: { id }, data: patch, select: PUBLIC_FIELDS });
   await audit({ tenantId, action: "THEME_UPDATE", actorId: actor.id, targetId: id, ip, metadata: { fields: Object.keys(patch) } });
-  return theme;
+  return { ...theme, offer: resolveOffer(theme, await offerDefaults(tenantId)) };
 }
 
 /** Exclusão lógica: some do catálogo, mas reservas antigas continuam apontando para ele. */
