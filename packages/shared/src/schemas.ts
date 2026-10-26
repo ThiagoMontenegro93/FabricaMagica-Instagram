@@ -89,6 +89,8 @@ export const TenantSettingsSchema = z.object({
   requireSelfie: z.boolean(),
   blockWithoutDocs: z.boolean(),
   weekendMultiplier: z.number().min(1).max(3),
+  /** Frete cobrado do contratante quando a equipe entrega e busca o tema (centavos). */
+  deliveryFeeBase: cents.max(1_000_000),
 });
 export const TenantSettingsPatchSchema = TenantSettingsSchema.partial();
 

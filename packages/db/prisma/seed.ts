@@ -27,7 +27,8 @@ const branding = {
 /**
  * Temas iniciais pedidos pelo Thiago (destaques do Instagram).
  * O catálogo não tem limite: novos temas são cadastrados pelo dono em /admin/temas.
- * PREÇOS E ITENS SÃO EXEMPLOS: ajustar no painel antes de abrir as reservas.
+ * Preços simbólicos definidos pelo Thiago (faixa R$ 1.200 a R$ 2.500); itens são exemplos.
+ * Ajustar no painel antes de abrir as reservas.
  */
 const themes = [
   {
@@ -36,7 +37,7 @@ const themes = [
     category: "Personagens e Filmes",
     description: "A savana africana na sua festa: Pedra do Reino, folhagens tropicais e os personagens que todo mundo ama.",
     includedItems: ["Painel Pedra do Reino", "Mesa principal", "Folhagens tropicais", "Bonecos decorativos"],
-    dailyPrice: 60000,
+    dailyPrice: 150000,
     totalQty: 1,
     isBestseller: true,
   },
@@ -46,7 +47,7 @@ const themes = [
     category: "Personagens e Filmes",
     description: "Um salão de Hogwarts com velas, brasões das casas e magia em cada detalhe.",
     includedItems: ["Painel Hogwarts", "Mesa com brasões das quatro casas", "Velas cenográficas", "Elfo decorativo"],
-    dailyPrice: 70000,
+    dailyPrice: 220000,
     totalQty: 1,
   },
   {
@@ -55,7 +56,7 @@ const themes = [
     category: "Personagens e Filmes",
     description: "O clássico Mickey feiticeiro com chapéu de estrelas, cores vibrantes e muita alegria.",
     includedItems: ["Painel Mickey", "Mesa principal", "Arco de balões vermelho, preto e amarelo", "Boneco decorativo"],
-    dailyPrice: 55000,
+    dailyPrice: 120000,
     totalQty: 1,
   },
   {
@@ -64,7 +65,7 @@ const themes = [
     category: "Personagens e Filmes",
     description: "Castelo, fogos e personagens Disney para uma festa encantada do começo ao fim.",
     includedItems: ["Painel castelo", "Mesa principal", "Iluminação colorida", "Personagens decorativos"],
-    dailyPrice: 65000,
+    dailyPrice: 180000,
     totalQty: 1,
     isNew: true,
   },
@@ -74,7 +75,7 @@ const themes = [
     category: "Halloween Premium",
     description: "Fantasmas, abóboras e névoa: o Halloween de luxo que é a marca registrada da Fábrica Mágica.",
     includedItems: ["Painel gótico", "Fantasma gigante", "Abóboras iluminadas", "Mesa principal"],
-    dailyPrice: 85000,
+    dailyPrice: 250000,
     totalQty: 1,
     isBestseller: true,
   },
@@ -84,7 +85,7 @@ const themes = [
     category: "Personagens e Filmes",
     description: "O castelo encantado da Fera com rosa sob a redoma, candelabros e detalhes em azul e dourado.",
     includedItems: ["Painel salão de baile", "Mesa imperial", "Rosa encantada com redoma", "Candelabros"],
-    dailyPrice: 70000,
+    dailyPrice: 200000,
     totalQty: 1,
   },
 ];
@@ -106,7 +107,8 @@ async function main() {
   await prisma.tenantSettings.upsert({
     where: { tenantId: tenant.id },
     update: {},
-    create: { tenantId: tenant.id }, // hostSensitiveDocs = false por padrão (modo econômico LGPD)
+    // hostSensitiveDocs = false por padrão (modo econômico LGPD); frete de R$ 400 cobrado do contratante.
+    create: { tenantId: tenant.id, deliveryFeeBase: 40000 },
   });
 
   for (const t of themes) {

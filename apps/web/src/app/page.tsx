@@ -44,7 +44,10 @@ export default async function Home({ searchParams }: { searchParams: { categoria
         <div className="flex flex-wrap items-end justify-between gap-4">
           <div>
             <h2 className="font-serif text-3xl text-white">Temas</h2>
-            <p className="text-sm text-neutral-400">Escolha a data da festa para ver o que está livre.</p>
+            <p className="text-sm text-neutral-400">
+              Escolha a data da festa para ver o que está livre.
+              {tenant.settings.deliveryFeeBase > 0 && ` Frete de ${formatBRL(tenant.settings.deliveryFeeBase)} para entrega e retirada.`}
+            </p>
           </div>
           <form className="flex flex-wrap items-end gap-2" action="/#temas">
             {searchParams.categoria && <input type="hidden" name="categoria" value={searchParams.categoria} />}

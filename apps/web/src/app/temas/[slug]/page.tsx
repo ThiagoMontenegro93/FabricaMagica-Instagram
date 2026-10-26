@@ -23,6 +23,7 @@ export default async function ThemePage({ params, searchParams }: { params: { sl
   const multiplier = theme.weekendMultiplier ?? tenant.settings.weekendMultiplier;
   const weekend = date ? isWeekendRate(date) : false;
   const price = weekend ? Math.round(theme.dailyPrice * multiplier) : theme.dailyPrice;
+  const deliveryFee = tenant.settings.deliveryFeeBase;
   const msg = `Olá! Quero reservar o tema ${theme.name}${date ? ` para ${date.split("-").reverse().join("/")}` : ""}.`;
 
   return (
@@ -56,6 +57,18 @@ export default async function ThemePage({ params, searchParams }: { params: { sl
           <p className="text-xs text-neutral-500">
             Sexta e sábado: +{Math.round((multiplier - 1) * 100)}%{weekend ? " (já aplicado na data escolhida)" : ""}.
           </p>
+          {deliveryFee > 0 && (
+            <div className="space-y-1 border-t border-white/5 pt-2 text-sm">
+              <p className="flex justify-between text-neutral-300">
+                <span>Frete (entrega e retirada)</span>
+                <span>{formatBRL(deliveryFee)}</span>
+              </p>
+              <p className="flex justify-between font-semibold text-white">
+                <span>Total com frete</span>
+                <span className="text-gold">{formatBRL(price + deliveryFee)}</span>
+              </p>
+            </div>
+          )}
           <form className="flex items-end gap-2 pt-2">
             <div>
               <label className="label" htmlFor="data">Data da festa</label>
