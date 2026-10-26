@@ -5,7 +5,6 @@ import {
   RESERVATION_STATUSES,
   RETENTION_OPTIONS,
   ROLES,
-  THEME_CATEGORIES,
   THEME_STATUSES,
 } from "./constants";
 import { isValidCPF, onlyDigits } from "./cpf";
@@ -94,28 +93,58 @@ export const TenantSettingsSchema = z.object({
 export const TenantSettingsPatchSchema = TenantSettingsSchema.partial();
 
 // --- Catálogo (RF02, RF03) ---
+const photoUrl = z
+  .string()
+  .trim()
+  .url("Foto deve ser um link https")
+  .refine((u) => u.startsWith("https://"), "Foto deve ser um link https");
+
 export const PartyThemeSchema = z.object({
-  name: z.string().trim().min(3),
-  category: z.enum(THEME_CATEGORIES),
-  description: z.string().trim().min(10),
-  includedItems: z.array(z.string().trim().min(1)).default([]),
-  sizeM2: z.number().positive().optional(),
+  name: z.string().trim().min(3, "Nome com ao menos 3 letras").max(80),
+  /** Categoria livre: as sugestões ficam em THEME_CATEGORIES. */
+  category: z.string().trim().min(2, "Informe a categoria").max(40),
+  description: z.string().trim().min(10, "Descrição com ao menos 10 caracteres").max(2000),
+  includedItems: z.array(z.string().trim().min(1).max(120)).max(50).default([]),
+  sizeM2: z.number().positive().max(10_000).nullable().optional(),
   dailyPrice: cents,
-  totalQty: z.number().int().min(0).default(1),
+  /** Quantos kits iguais existem: cada um atende uma festa por período. */
+  totalQty: z.number().int().min(0).max(1000).default(1),
   weekendMultiplier: z.number().min(1).max(3).nullable().optional(),
-  photos: z.array(z.string().url()).default([]),
+  photos: z.array(photoUrl).max(12).default([]),
   status: z.enum(THEME_STATUSES).default("ATIVO"),
   isBestseller: z.boolean().default(false),
   isNew: z.boolean().default(false),
 });
+export const PartyThemePatchSchema = PartyThemeSchema.partial();
 
 export const LiveCharacterSchema = z.object({
-  name: z.string().trim().min(3),
-  description: z.string().trim().optional(),
+  name: z.string().trim().min(3).max(80),
+  description: z.string().trim().max(2000).nullable().optional(),
   pricePer2h: cents,
   priceExtraHour: cents,
-  photos: z.array(z.string().url()).default([]),
+  photos: z.array(photoUrl).max(12).default([]),
   active: z.boolean().default(true),
+});
+export const LiveCharacterPatchSchema = LiveCharacterSchema.partial();
+
+/** Bloqueio manual da agenda de um personagem (folga, outro evento). */
+export const CharacterBlockSchema = z
+  .object({
+    startsAt: z.coerce.date(),
+    endsAt: z.coerce.date(),
+    note: z.string().trim().max(500).optional(),
+  })
+  .refine((b) => b.endsAt > b.startsAt, { path: ["endsAt"], message: "Fim deve ser depois do início" })
+  .refine((b) => b.endsAt.getTime() - b.startsAt.getTime() <= 7 * 86_400_000, {
+    path: ["endsAt"],
+    message: "Bloqueio de no máximo 7 dias por vez",
+  });
+
+export const CatalogQuerySchema = z.object({
+  category: z.string().trim().max(40).optional(),
+  q: z.string().trim().max(80).optional(),
+  availableOn: isoDate.optional(),
+  returnOn: isoDate.optional(),
 });
 
 // --- Reserva (RF04, RF05) ---

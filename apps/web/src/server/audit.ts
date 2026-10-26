@@ -9,7 +9,15 @@ export type AuditAction =
   | "UPDATE_SETTINGS"
   | "CREATE_CLIENT"
   | "VIEW_CLIENTS"
-  | "ACCESS_DOC";
+  | "ACCESS_DOC"
+  | "THEME_CREATE"
+  | "THEME_UPDATE"
+  | "THEME_DELETE"
+  | "CHARACTER_CREATE"
+  | "CHARACTER_UPDATE"
+  | "CHARACTER_DELETE"
+  | "CHARACTER_BLOCK"
+  | "CHARACTER_UNBLOCK";
 
 /** Grava no AuditLog e também no log JSON (RF12, LGPD). */
 export async function audit(input: {

@@ -50,7 +50,7 @@ pnpm typecheck
 Os testes de integração apagam o banco: eles só rodam se o nome do banco em `DATABASE_URL` contiver `test`
 (ex.: `fabrica_magica_test`). Crie-o com `createdb fabrica_magica_test` e rode `pnpm db:deploy` apontando para ele.
 
-## API (Sprint 1)
+## API
 
 | Método | Rota | Quem | O que faz |
 |---|---|---|---|
@@ -66,11 +66,22 @@ Os testes de integração apagam o banco: eles só rodam se o nome do banco em `
 | GET | `/api/clients?q=` | dono, atendente | lista (atendente vê CPF mascarado) |
 | GET | `/api/admin/audit-logs` | dono | logs de acesso |
 | GET | `/api/health` | público | healthcheck do deploy |
+| GET | `/api/themes?category=&q=&availableOn=&returnOn=` | público | catálogo com disponibilidade na data |
+| GET | `/api/themes/:idOuSlug` | público | detalhe do tema |
+| POST | `/api/themes` | dono | novo tema (sem limite de quantidade) |
+| PATCH | `/api/themes/:id` | dono; atendente só `status` | editar ou pôr em manutenção |
+| DELETE | `/api/themes/:id` | dono | exclusão lógica (bloqueada com reserva em aberto) |
+| GET/POST | `/api/characters` | público / dono | personagens vivos |
+| PATCH/DELETE | `/api/characters/:id` | dono | editar, desativar, excluir |
+| GET | `/api/characters/:id/schedule` | equipe | agenda (festas e bloqueios) |
+| POST/DELETE | `/api/characters/:id/block[/:blockId]` | equipe | bloquear ou liberar horário sem sobreposição |
 
 Sessão: access token JWT de 15 min e refresh opaco de 30 dias, ambos em cookie `httpOnly` `SameSite=Lax`.
 O PWA pode mandar `Authorization: Bearer`. POSTs de outra origem são recusados (anti-CSRF).
 
-Telas: [início](docs/screens/home.png), [cadastro com bloqueio 18+](docs/screens/cadastro-menor.png), [privacidade do dono](docs/screens/admin-privacidade.png).
+Painel do dono: `/admin/temas`, `/admin/personagens`, `/admin/configuracoes`.
+
+Telas: [catálogo](docs/screens/catalogo.png), [tema](docs/screens/tema.png), [admin de temas](docs/screens/admin-temas.png), [novo tema](docs/screens/admin-novo-tema.png), [início](docs/screens/home.png), [cadastro com bloqueio 18+](docs/screens/cadastro-menor.png), [privacidade do dono](docs/screens/admin-privacidade.png).
 
 O CI (GitHub Actions) roda typecheck, testes, migrações num Postgres limpo e o seed duas vezes (idempotência).
 
