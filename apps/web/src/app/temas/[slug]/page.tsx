@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { formatBRL, isValidIsoDate, isWeekendRate, whatsappLink } from "@fabrica/shared";
-import { ThemeCover } from "@/components/ThemeCard";
+import { Gallery } from "@/components/Gallery";
 import { currentTenant } from "@/server/tenant";
 import { getTheme, themeAvailability } from "@/server/services/theme.service";
 import { AppError } from "@/server/errors";
@@ -23,26 +23,13 @@ export default async function ThemePage({ params, searchParams }: { params: { sl
   const multiplier = theme.weekendMultiplier ?? tenant.settings.weekendMultiplier;
   const weekend = date ? isWeekendRate(date) : false;
   const price = weekend ? Math.round(theme.dailyPrice * multiplier) : theme.dailyPrice;
-  const deliveryFee = tenant.settings.deliveryFeeBase;
+  const deliveryFee = theme.deliveryFee ?? tenant.settings.deliveryFeeBase;
+  const extraFee = price - theme.dailyPrice;
   const msg = `Olá! Quero reservar o tema ${theme.name}${date ? ` para ${date.split("-").reverse().join("/")}` : ""}.`;
 
   return (
     <article className="grid gap-10 lg:grid-cols-2">
-      <div className="space-y-3">
-        <div className="neon-frame aspect-square overflow-hidden">
-          <ThemeCover name={theme.name} photos={theme.photos} />
-        </div>
-        {theme.photos.length > 1 && (
-          <ul className="grid grid-cols-4 gap-2">
-            {theme.photos.slice(1, 9).map((p) => (
-              <li key={p} className="aspect-square overflow-hidden rounded-lg">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={p} alt={theme.name} className="h-full w-full object-cover" loading="lazy" />
-              </li>
-            ))}
-          </ul>
-        )}
-      </div>
+      <Gallery name={theme.name} photos={theme.photos} videoUrl={theme.videoUrl} gifUrl={theme.gifUrl} />
 
       <div className="space-y-6">
         <Link href="/#temas" className="text-sm text-neutral-400 hover:text-gold">← Todos os temas</Link>
@@ -53,18 +40,26 @@ export default async function ThemePage({ params, searchParams }: { params: { sl
         <p className="text-neutral-300">{theme.description}</p>
 
         <div className="card space-y-2">
-          <p className="text-3xl text-gold">{formatBRL(price)} <span className="text-sm text-neutral-500">/ diária</span></p>
+          <p className="text-3xl text-gold">{formatBRL(theme.dailyPrice)} <span className="text-sm text-neutral-500">/ diária</span></p>
           <p className="text-xs text-neutral-500">
             Sexta e sábado: +{Math.round((multiplier - 1) * 100)}%{weekend ? " (já aplicado na data escolhida)" : ""}.
           </p>
-          {deliveryFee > 0 && (
+          {(deliveryFee > 0 || extraFee > 0) && (
             <div className="space-y-1 border-t border-white/5 pt-2 text-sm">
-              <p className="flex justify-between text-neutral-300">
-                <span>Frete (entrega e retirada)</span>
-                <span>{formatBRL(deliveryFee)}</span>
-              </p>
+              {extraFee > 0 && (
+                <p className="flex justify-between text-neutral-300">
+                  <span>Taxa extra de fim de semana</span>
+                  <span>{formatBRL(extraFee)}</span>
+                </p>
+              )}
+              {deliveryFee > 0 && (
+                <p className="flex justify-between text-neutral-300">
+                  <span>Frete (entrega e retirada)</span>
+                  <span>{formatBRL(deliveryFee)}</span>
+                </p>
+              )}
               <p className="flex justify-between font-semibold text-white">
-                <span>Total com frete</span>
+                <span>Total</span>
                 <span className="text-gold">{formatBRL(price + deliveryFee)}</span>
               </p>
             </div>

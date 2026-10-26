@@ -6,6 +6,7 @@ import Link from "next/link";
 import { THEME_CATEGORIES } from "@fabrica/shared";
 import { api, ApiError } from "@/lib/api";
 import { ListEditor } from "@/components/ListEditor";
+import { MediaManager } from "@/components/MediaManager";
 import { ThemeCover } from "@/components/ThemeCard";
 import { centsToReais, reaisToCents } from "@/lib/money";
 
@@ -15,7 +16,10 @@ interface Form {
   description: string;
   includedItems: string[];
   photos: string[];
+  videoUrl: string | null;
+  gifUrl: string | null;
   price: string; // em reais, como o dono digita
+  deliveryFee: string; // vazio = frete padrão da loja
   totalQty: number;
   weekendPercent: string; // vazio = usa o padrão da loja
   status: string;
@@ -29,7 +33,10 @@ const EMPTY: Form = {
   description: "",
   includedItems: [],
   photos: [],
+  videoUrl: null,
+  gifUrl: null,
   price: "",
+  deliveryFee: "",
   totalQty: 1,
   weekendPercent: "",
   status: "ATIVO",
@@ -47,7 +54,7 @@ export default function ThemeEditorPage({ params }: { params: { id: string } }) 
 
   useEffect(() => {
     if (isNew) return;
-    api<{ theme: Record<string, unknown> & { dailyPrice: number; weekendMultiplier: number | null } }>(`/api/themes/${params.id}`)
+    api<{ theme: Record<string, unknown> & { dailyPrice: number; weekendMultiplier: number | null; deliveryFee: number | null } }>(`/api/themes/${params.id}`)
       .then(({ theme: t }) =>
         setForm({
           name: t.name as string,
@@ -55,7 +62,10 @@ export default function ThemeEditorPage({ params }: { params: { id: string } }) 
           description: t.description as string,
           includedItems: t.includedItems as string[],
           photos: t.photos as string[],
+          videoUrl: (t.videoUrl as string | null) ?? null,
+          gifUrl: (t.gifUrl as string | null) ?? null,
           price: centsToReais(t.dailyPrice),
+          deliveryFee: t.deliveryFee === null ? "" : centsToReais(t.deliveryFee),
           totalQty: t.totalQty as number,
           weekendPercent: t.weekendMultiplier ? String(Math.round((t.weekendMultiplier - 1) * 100)) : "",
           status: t.status as string,
@@ -76,12 +86,18 @@ export default function ThemeEditorPage({ params }: { params: { id: string } }) 
     const dailyPrice = reaisToCents(form.price);
     if (!Number.isFinite(dailyPrice) || dailyPrice < 0) return setError("Informe o valor da diária, ex.: 850,00");
     const pct = form.weekendPercent.trim();
+    const fee = form.deliveryFee.trim();
+    const deliveryFee = fee === "" ? null : reaisToCents(fee);
+    if (deliveryFee !== null && (!Number.isFinite(deliveryFee) || deliveryFee < 0)) return setError("Frete inválido, ex.: 400,00");
     const body = {
       name: form.name,
       category: form.category,
       description: form.description,
       includedItems: form.includedItems,
       photos: form.photos,
+      videoUrl: form.videoUrl,
+      gifUrl: form.gifUrl,
+      deliveryFee,
       dailyPrice,
       totalQty: form.totalQty,
       weekendMultiplier: pct === "" ? null : 1 + Number(pct) / 100,
@@ -127,7 +143,7 @@ export default function ThemeEditorPage({ params }: { params: { id: string } }) 
           <ListEditor label="Itens inclusos" value={form.includedItems} onChange={(v) => set("includedItems", v)} placeholder="Ex.: Painel 3x2m" />
         </div>
 
-        <div className="card grid gap-4 sm:grid-cols-3">
+        <div className="card grid gap-4 sm:grid-cols-4">
           <div>
             <label className="label" htmlFor="price">Diária (R$)</label>
             <input id="price" className="field" inputMode="decimal" value={form.price} onChange={(e) => set("price", e.target.value)} placeholder="850,00" required />
@@ -138,14 +154,21 @@ export default function ThemeEditorPage({ params }: { params: { id: string } }) 
             <p className="mt-1 text-xs text-neutral-500">Quantas festas no mesmo dia.</p>
           </div>
           <div>
-            <label className="label" htmlFor="wk">Acréscimo sex/sáb (%)</label>
+            <label className="label" htmlFor="wk">Taxa extra sex/sáb (%)</label>
             <input id="wk" className="field" inputMode="numeric" value={form.weekendPercent} onChange={(e) => set("weekendPercent", e.target.value)} placeholder="Padrão da loja" />
+          </div>
+          <div>
+            <label className="label" htmlFor="fee">Frete (R$)</label>
+            <input id="fee" className="field" inputMode="decimal" value={form.deliveryFee} onChange={(e) => set("deliveryFee", e.target.value)} placeholder="Padrão da loja" />
           </div>
         </div>
 
         <div className="card space-y-3">
-          <ListEditor label="Fotos (links https)" value={form.photos} onChange={(v) => set("photos", v)} placeholder="https://..." />
-          <p className="text-xs text-neutral-500">A primeira foto vira a capa. Envio direto de arquivos entra junto com o armazenamento em nuvem.</p>
+          <h2 className="font-serif text-2xl text-white">Fotos, vídeo e GIF</h2>
+          <MediaManager
+            value={{ photos: form.photos, videoUrl: form.videoUrl, gifUrl: form.gifUrl }}
+            onChange={(m) => setForm({ ...form, ...m })}
+          />
         </div>
       </div>
 

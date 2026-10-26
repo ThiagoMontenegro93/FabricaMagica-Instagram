@@ -10,6 +10,7 @@ import {
 import { isValidCPF, onlyDigits } from "./cpf";
 import { isAdult } from "./age";
 import { ISO_DATE_REGEX, isValidIsoDate } from "./dates";
+import { MAX_THEME_PHOTOS, isMediaUrl } from "./media";
 
 const cents = z.number().int().nonnegative();
 const isoDate = z
@@ -95,11 +96,7 @@ export const TenantSettingsSchema = z.object({
 export const TenantSettingsPatchSchema = TenantSettingsSchema.partial();
 
 // --- Catálogo (RF02, RF03) ---
-const photoUrl = z
-  .string()
-  .trim()
-  .url("Foto deve ser um link https")
-  .refine((u) => u.startsWith("https://"), "Foto deve ser um link https");
+const photoUrl = z.string().trim().max(500).refine(isMediaUrl, "Use um link https ou um arquivo enviado");
 
 export const PartyThemeSchema = z.object({
   name: z.string().trim().min(3, "Nome com ao menos 3 letras").max(80),
@@ -112,7 +109,11 @@ export const PartyThemeSchema = z.object({
   /** Quantos kits iguais existem: cada um atende uma festa por período. */
   totalQty: z.number().int().min(0).max(1000).default(1),
   weekendMultiplier: z.number().min(1).max(3).nullable().optional(),
-  photos: z.array(photoUrl).max(12).default([]),
+  photos: z.array(photoUrl).max(MAX_THEME_PHOTOS, `No máximo ${MAX_THEME_PHOTOS} fotos`).default([]),
+  videoUrl: photoUrl.nullable().optional(),
+  gifUrl: photoUrl.nullable().optional(),
+  /** Frete próprio do tema (centavos); null usa o frete padrão da loja. */
+  deliveryFee: cents.max(1_000_000).nullable().optional(),
   status: z.enum(THEME_STATUSES).default("ATIVO"),
   isBestseller: z.boolean().default(false),
   isNew: z.boolean().default(false),

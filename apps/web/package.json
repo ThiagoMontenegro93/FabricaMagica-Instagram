@@ -11,6 +11,7 @@
     "test": "vitest run"
   },
   "dependencies": {
+    "@aws-sdk/client-s3": "3.1149.0",
     "@fabrica/db": "workspace:*",
     "@fabrica/shared": "workspace:*",
     "bcryptjs": "3.0.3",

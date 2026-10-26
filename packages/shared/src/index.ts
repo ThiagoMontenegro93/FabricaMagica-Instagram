@@ -8,3 +8,4 @@ export * from "./status";
 export * from "./whatsapp";
 export * from "./schemas";
 export * from "./slug";
+export * from "./media";

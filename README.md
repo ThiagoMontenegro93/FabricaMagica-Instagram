@@ -71,6 +71,8 @@ Os testes de integração apagam o banco: eles só rodam se o nome do banco em `
 | POST | `/api/themes` | dono | novo tema (sem limite de quantidade) |
 | PATCH | `/api/themes/:id` | dono; atendente só `status` | editar ou pôr em manutenção |
 | DELETE | `/api/themes/:id` | dono | exclusão lógica (bloqueada com reserva em aberto) |
+| POST | `/api/uploads/media` | dono | envia foto, vídeo curto ou GIF (multipart `file`, `kind`) |
+| GET | `/api/media/<chave>` | público | serve a mídia do armazenamento local (com Range para vídeo) |
 | GET/POST | `/api/characters` | público / dono | personagens vivos |
 | PATCH/DELETE | `/api/characters/:id` | dono | editar, desativar, excluir |
 | GET | `/api/characters/:id/schedule` | equipe | agenda (festas e bloqueios) |
@@ -81,7 +83,10 @@ O PWA pode mandar `Authorization: Bearer`. POSTs de outra origem são recusados 
 
 Painel do dono: `/admin/temas`, `/admin/personagens`, `/admin/configuracoes`.
 
-Telas: [catálogo](docs/screens/catalogo.png), [tema](docs/screens/tema.png), [admin de temas](docs/screens/admin-temas.png), [novo tema](docs/screens/admin-novo-tema.png), [início](docs/screens/home.png), [cadastro com bloqueio 18+](docs/screens/cadastro-menor.png), [privacidade do dono](docs/screens/admin-privacidade.png).
+Mídia dos temas: até 20 fotos (JPG/PNG/WEBP, 8 MB cada), 1 vídeo curto de até 30 s (MP4/MOV/WEBM, 40 MB) e 1 GIF (10 MB).
+O tipo real é conferido pelos bytes do arquivo. Em produção no Railway/Render use `STORAGE_DRIVER=s3` (Cloudflare R2), porque o disco desses serviços é apagado a cada deploy.
+
+Telas: [mídia no painel](docs/screens/admin-midia.png), [catálogo](docs/screens/catalogo.png), [tema](docs/screens/tema.png), [admin de temas](docs/screens/admin-temas.png), [novo tema](docs/screens/admin-novo-tema.png), [início](docs/screens/home.png), [cadastro com bloqueio 18+](docs/screens/cadastro-menor.png), [privacidade do dono](docs/screens/admin-privacidade.png).
 
 O CI (GitHub Actions) roda typecheck, testes, migrações num Postgres limpo e o seed duas vezes (idempotência).
 
