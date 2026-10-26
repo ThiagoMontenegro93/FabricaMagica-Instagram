@@ -104,6 +104,9 @@ O CI (GitHub Actions) roda typecheck, testes, migrações num Postgres limpo e o
 | RN11 LGPD e contrato obrigatórios | `ClientSchema` |
 | RF12 retenção 30/90/365 | `TenantSettingsSchema` |
 | RF13 links wa.me com mensagem pronta | `whatsapp.ts` |
+| Tema só aluguel, só venda ou ambos (padrão da loja + ajuste por tema); venda exige preço | `offer.ts`, `PartyThemeSchema` |
+| Retirada na loja sem frete ou entrega da loja com frete; ao menos uma forma ligada | `offer.ts`, `pricing.ts` |
+| Venda cobra o preço de venda, sem taxa de fim de semana | `pricing.ts` |
 
 ## Erros comuns
 

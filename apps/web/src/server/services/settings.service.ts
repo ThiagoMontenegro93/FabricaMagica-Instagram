@@ -1,6 +1,7 @@
 import { prisma } from "@fabrica/db";
 import { FABRICA_MAGICA, TenantSettingsPatchSchema, whatsappLink } from "@fabrica/shared";
 import { audit } from "../audit";
+import { Errors } from "../errors";
 
 const SETTINGS_FIELDS = {
   hostSensitiveDocs: true,
@@ -10,6 +11,9 @@ const SETTINGS_FIELDS = {
   blockWithoutDocs: true,
   weekendMultiplier: true,
   deliveryFeeBase: true,
+  defaultOfferMode: true,
+  allowPickup: true,
+  allowDelivery: true,
   updatedAt: true,
 } as const;
 
@@ -22,7 +26,15 @@ export async function getPublicSettings(tenantId: string) {
   const [settings, tenant] = await Promise.all([
     prisma.tenantSettings.findUniqueOrThrow({
       where: { tenantId },
-      select: { hostSensitiveDocs: true, requireProof: true, requireSelfie: true, deliveryFeeBase: true },
+      select: {
+        hostSensitiveDocs: true,
+        requireProof: true,
+        requireSelfie: true,
+        deliveryFeeBase: true,
+        defaultOfferMode: true,
+        allowPickup: true,
+        allowDelivery: true,
+      },
     }),
     prisma.tenant.findUniqueOrThrow({ where: { id: tenantId }, select: { name: true, whatsapp: true } }),
   ]);
@@ -32,6 +44,9 @@ export async function getPublicSettings(tenantId: string) {
     whatsappLink: whatsappLink(undefined, tenant.whatsapp),
     slogan: FABRICA_MAGICA.slogan,
     deliveryFee: settings.deliveryFeeBase,
+    defaultOfferMode: settings.defaultOfferMode,
+    allowPickup: settings.allowPickup,
+    allowDelivery: settings.allowDelivery,
     documents: settings.hostSensitiveDocs
       ? { mode: "UPLOAD" as const, requireProof: settings.requireProof, requireSelfie: settings.requireSelfie }
       : { mode: "WHATSAPP" as const },
@@ -42,6 +57,9 @@ export async function getPublicSettings(tenantId: string) {
 export async function updateSettings(tenantId: string, actorId: string, input: unknown, ip?: string) {
   const patch = TenantSettingsPatchSchema.parse(input);
   const before = await getSettings(tenantId);
+  if ((patch.allowPickup ?? before.allowPickup) === false && (patch.allowDelivery ?? before.allowDelivery) === false) {
+    throw Errors.badRequest("Deixe ao menos uma forma de entrega: retirada ou entrega");
+  }
   const after = await prisma.tenantSettings.update({ where: { tenantId }, data: patch, select: SETTINGS_FIELDS });
 
   const changed = Object.fromEntries(

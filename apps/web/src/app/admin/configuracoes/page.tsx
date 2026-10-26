@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { RETENTION_OPTIONS } from "@fabrica/shared";
+import { OFFER_MODES, OFFER_MODE_LABELS, RETENTION_OPTIONS, type OfferMode } from "@fabrica/shared";
 import { centsToReais, reaisToCents } from "@/lib/money";
 import { api, ApiError } from "@/lib/api";
 
@@ -13,6 +13,9 @@ interface Settings {
   blockWithoutDocs: boolean;
   weekendMultiplier: number;
   deliveryFeeBase: number;
+  defaultOfferMode: OfferMode;
+  allowPickup: boolean;
+  allowDelivery: boolean;
 }
 
 interface Log {
@@ -57,15 +60,16 @@ export default function ConfiguracoesPage() {
     }
   }
 
-  const toggle = (k: keyof Settings) => setSettings((s) => (s ? { ...s, [k]: !s[k] } : s));
+  const toggle = (k: { [K in keyof Settings]: Settings[K] extends boolean ? K : never }[keyof Settings]) => setSettings((s) => (s ? { ...s, [k]: !s[k] } : s));
 
   return (
     <div className="mx-auto max-w-3xl space-y-8">
-      <h1 className="font-serif text-4xl text-white">Privacidade e Documentos</h1>
+      <h1 className="font-serif text-4xl text-white">Configurações da loja</h1>
       {!canEdit && <p className="alert-error">Somente o dono pode alterar estas configurações.</p>}
       {msg && <p className={msg.ok ? "rounded-lg border border-neon-green/40 bg-green-950/30 px-4 py-3 text-sm text-neon-green" : "alert-error"}>{msg.text}</p>}
 
       <section className="card space-y-5">
+        <h2 className="font-serif text-2xl text-white">Privacidade e documentos</h2>
         <Switch
           label="Hospedar documentos sensíveis na plataforma"
           checked={settings.hostSensitiveDocs}
@@ -98,9 +102,37 @@ export default function ConfiguracoesPage() {
         )}
       </section>
 
-      <section className="card space-y-3">
-        <h2 className="font-serif text-2xl text-white">Frete</h2>
-        <label className="label" htmlFor="frete">Valor cobrado do contratante para entregar e buscar o tema (R$)</label>
+      <section className="card space-y-4">
+        <h2 className="font-serif text-2xl text-white">Aluguel, venda e entrega</h2>
+        <p className="text-sm text-neutral-400">
+          Padrão para todos os temas. Em cada tema você pode mudar isso em Temas → editar.
+        </p>
+        <div>
+          <label className="label" htmlFor="offer">Como os temas aparecem no site</label>
+          <select
+            id="offer"
+            className="field max-w-xs"
+            value={settings.defaultOfferMode}
+            disabled={!canEdit}
+            onChange={(e) => setSettings({ ...settings, defaultOfferMode: e.target.value as OfferMode })}
+          >
+            {OFFER_MODES.map((m) => <option key={m} value={m}>{OFFER_MODE_LABELS[m]}</option>)}
+          </select>
+          <p className="mt-1 text-xs text-neutral-500">Para vender, o tema precisa ter preço de venda.</p>
+        </div>
+        <Switch
+          label="Cliente pode retirar na loja (transporte por conta dele, sem frete)"
+          checked={settings.allowPickup}
+          onChange={() => toggle("allowPickup")}
+          disabled={!canEdit}
+        />
+        <Switch
+          label="A loja entrega e busca (cobra frete)"
+          checked={settings.allowDelivery}
+          onChange={() => toggle("allowDelivery")}
+          disabled={!canEdit}
+        />
+        <label className="label" htmlFor="frete">Frete cobrado do contratante quando a loja entrega (R$)</label>
         <input
           id="frete"
           className="field max-w-[10rem]"

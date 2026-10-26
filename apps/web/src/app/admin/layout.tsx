@@ -3,7 +3,7 @@ import Link from "next/link";
 const LINKS = [
   { href: "/admin/temas", label: "Temas" },
   { href: "/admin/personagens", label: "Personagens" },
-  { href: "/admin/configuracoes", label: "Privacidade" },
+  { href: "/admin/configuracoes", label: "Configurações" },
 ];
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {

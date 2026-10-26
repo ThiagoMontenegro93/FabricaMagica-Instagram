@@ -1,4 +1,4 @@
-import { CHARACTER_BASE_MINUTES } from "./constants";
+import { CHARACTER_BASE_MINUTES, type DealType, type DeliveryType } from "./constants";
 import { isWeekendRate } from "./dates";
 
 /** Todos os valores em centavos (85000 = R$ 850,00). */
@@ -7,6 +7,8 @@ export interface ThemeLine {
   quantity: number;
   /** Multiplicador do tema; se ausente usa o do tenant (RN07). */
   weekendMultiplier?: number | null;
+  /** Preço de venda; obrigatório quando dealType = VENDA. */
+  salePrice?: number | null;
 }
 
 export interface CharacterLine {
@@ -21,9 +23,15 @@ export interface QuoteInput {
   characters: CharacterLine[];
   deliveryFee: number;
   tenantWeekendMultiplier: number;
+  /** ALUGUEL (padrão) cobra diária + taxa fds; VENDA cobra o preço de venda, sem taxa fds. */
+  dealType?: DealType;
+  /** RETIRADA: cliente cuida do transporte, frete zero. ENTREGA (padrão): cobra o frete. */
+  deliveryType?: DeliveryType;
 }
 
 export interface Quote {
+  dealType: DealType;
+  deliveryType: DeliveryType;
   themesSubtotal: number;
   charactersSubtotal: number;
   subtotal: number;
@@ -51,18 +59,28 @@ export function characterDurationMinutes(extraHours: number): number {
 
 /**
  * RF04: total = sum(temas) + sum(personagens) + taxa entrega + taxa fds.
- * A taxa de fim de semana incide sobre os temas (aluguel diário).
+ * A taxa de fim de semana incide sobre os temas alugados (diária); na venda não.
+ * Frete só quando a loja entrega; na retirada o cliente cuida do transporte.
  * Personagens são cobrados por hora e não recebem o multiplicador.
  */
 export function calculateQuote(input: QuoteInput): Quote {
   assertCents("deliveryFee", input.deliveryFee);
+  const dealType = input.dealType ?? "ALUGUEL";
+  const deliveryType = input.deliveryType ?? "ENTREGA";
+  const deliveryFee = deliveryType === "ENTREGA" ? input.deliveryFee : 0;
   const isWeekend = isWeekendRate(input.eventDate);
 
   let themesSubtotal = 0;
   let weekendFee = 0;
   for (const t of input.themes) {
-    assertCents("dailyPrice", t.dailyPrice);
     if (!Number.isInteger(t.quantity) || t.quantity < 1) throw new Error("quantity deve ser >= 1");
+    if (dealType === "VENDA") {
+      if (t.salePrice == null) throw new Error("Tema sem preço de venda");
+      assertCents("salePrice", t.salePrice);
+      themesSubtotal += t.salePrice * t.quantity;
+      continue;
+    }
+    assertCents("dailyPrice", t.dailyPrice);
     const base = t.dailyPrice * t.quantity;
     themesSubtotal += base;
     if (isWeekend) {
@@ -74,12 +92,14 @@ export function calculateQuote(input: QuoteInput): Quote {
   const charactersSubtotal = input.characters.reduce((acc, c) => acc + characterPrice(c), 0);
   const subtotal = themesSubtotal + charactersSubtotal;
   return {
+    dealType,
+    deliveryType,
     themesSubtotal,
     charactersSubtotal,
     subtotal,
     weekendFee,
-    deliveryFee: input.deliveryFee,
-    total: subtotal + weekendFee + input.deliveryFee,
+    deliveryFee,
+    total: subtotal + weekendFee + deliveryFee,
     isWeekend,
   };
 }
