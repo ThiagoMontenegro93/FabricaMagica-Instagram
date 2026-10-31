@@ -23,7 +23,7 @@ function LoginForm() {
       });
       // Só aceita redirecionamento interno (evita open redirect).
       const safeNext = next && next.startsWith("/") && !next.startsWith("//") ? next : null;
-      const home = user.role === "SUPER_ADMIN" || user.role === "ATENDENTE" ? "/admin/configuracoes" : "/cadastro";
+      const home = user.role === "SUPER_ADMIN" || user.role === "ATENDENTE" ? "/admin" : "/cadastro";
       router.push(safeNext ?? home);
       router.refresh();
     } catch (err) {

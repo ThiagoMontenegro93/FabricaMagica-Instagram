@@ -7,6 +7,7 @@ import { api, ApiError } from "@/lib/api";
 import type { ReservationDTO } from "@/lib/reservation-types";
 import { StatusBadge } from "@/components/StatusBadge";
 import { ReservationSummary } from "@/components/ReservationSummary";
+import { DamagePanel } from "@/components/DamagePanel";
 
 const fmt = (iso: string | null) => (iso ? new Date(iso).toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo" }) : null);
 
@@ -95,6 +96,8 @@ export default function AdminReservaPage({ params }: { params: { id: string } })
           </div>
         )}
         {msg && <p className={msg.ok ? "alert-ok" : "alert-error"}>{msg.text}</p>}
+
+        <DamagePanel r={r} isOwner={role === "SUPER_ADMIN"} onChange={load} />
 
         <div className="card space-y-2 text-sm">
           <p className="text-xs uppercase tracking-wider text-neutral-500">Histórico</p>

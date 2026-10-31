@@ -28,7 +28,10 @@ export type AuditAction =
   | "VIEW_CLIENT"
   | "PAYMENT_CREATED"
   | "PAYMENT_APPROVED"
-  | "PAYMENT_NEEDS_REVIEW";
+  | "PAYMENT_NEEDS_REVIEW"
+  | "DAMAGE_REPORT"
+  | "DAMAGE_DELETE"
+  | "VIEW_DASHBOARD";
 
 /** Grava no AuditLog e também no log JSON (RF12, LGPD). */
 export async function audit(input: {

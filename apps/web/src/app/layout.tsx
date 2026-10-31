@@ -25,7 +25,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           </nav>
         </header>
         <main className="mx-auto max-w-6xl px-4 py-10">{children}</main>
-        <footer className="border-t border-white/5 py-8 text-center text-xs text-neutral-500">
+        <footer className="border-t border-white/5 px-4 py-8 text-center text-xs text-neutral-500">
           <p>{FABRICA_MAGICA.address}</p>
           <p className="mt-1">
             <a className="hover:text-gold" href={whatsappLink()} target="_blank" rel="noopener noreferrer">
