@@ -33,13 +33,17 @@ export default function ConfiguracoesPage() {
   const [logs, setLogs] = useState<Log[]>([]);
   const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
   const [saving, setSaving] = useState(false);
+  const [docsReady, setDocsReady] = useState(true);
 
   useEffect(() => {
     api<{ user: { role: string } }>("/api/auth/me").then(({ user }) => {
       setRole(user.role);
       if (user.role === "SUPER_ADMIN") api<{ items: Log[] }>("/api/admin/audit-logs?take=20").then((r) => setLogs(r.items));
     });
-    api<{ settings: Settings }>("/api/tenant/settings").then((r) => setSettings(r.settings));
+    api<{ settings: Settings; docsEncryptionReady: boolean }>("/api/tenant/settings").then((r) => {
+      setSettings(r.settings);
+      setDocsReady(r.docsEncryptionReady);
+    });
   }, []);
 
   if (!settings) return <p className="text-neutral-400">Carregando...</p>;
@@ -79,6 +83,11 @@ export default function ConfiguracoesPage() {
         {settings.hostSensitiveDocs ? (
           <div className="space-y-4 rounded-xl border border-gold/30 p-4">
             <p className="text-sm text-neutral-300">Documentos criptografados AES-256, URL assinada de 15 min, acesso auditado.</p>
+            {!docsReady && (
+              <p className="alert-error">
+                Falta configurar a chave de criptografia (DOCS_ENCRYPTION_KEY) no servidor. Até lá, os clientes não conseguem enviar documentos.
+              </p>
+            )}
             <div>
               <label className="label" htmlFor="ret">Retenção</label>
               <select

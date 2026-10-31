@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useState } from "react";
 import { formatDateBR, whatsappLink } from "@fabrica/shared";
 import { api, ApiError } from "@/lib/api";
@@ -52,7 +53,7 @@ export default function AdminClientesPage() {
             <tbody>
               {items.map((c) => (
                 <tr key={c.id} className="border-t border-white/5">
-                  <td className="px-4 py-3 text-white">{c.name}</td>
+                  <td className="px-4 py-3"><Link href={`/admin/clientes/${c.id}`} className="text-white hover:text-gold">{c.name}</Link></td>
                   <td className="font-mono text-xs text-neutral-300">{c.cpf}</td>
                   <td>
                     <a className="text-gold hover:underline" href={whatsappLink(undefined, c.whatsapp)} target="_blank" rel="noopener noreferrer">WhatsApp</a>

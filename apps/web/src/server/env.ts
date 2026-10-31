@@ -7,6 +7,12 @@ const EnvSchema = z.object({
   TENANT_SLUG: z.string().default("afabricamagica"),
   /** Origem pública do site, usada na checagem anti-CSRF. Ex.: https://afabricamagica.com.br */
   APP_ORIGIN: z.string().url().optional(),
+  /** Chave AES-256 (32 bytes em base64) dos documentos sensíveis. Sem ela, o upload fica desligado. */
+  DOCS_ENCRYPTION_KEY: z.string().optional(),
+  /** Pasta privada dos documentos no modo local (fora da pasta pública de mídia). */
+  DOCS_DIR: z.string().optional(),
+  /** Segredo das rotinas agendadas (/api/cron/*). */
+  CRON_SECRET: z.string().min(16).optional(),
 });
 
 export type Env = z.infer<typeof EnvSchema>;

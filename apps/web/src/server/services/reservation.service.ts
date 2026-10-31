@@ -25,6 +25,7 @@ import {
 import { Errors } from "../errors";
 import { audit } from "../audit";
 import { offerDefaults, themeAvailability } from "./theme.service";
+import { assertDocsForReservation } from "./document.service";
 
 type Db = Prisma.TransactionClient;
 type Actor = { id: string; role: Role };
@@ -311,6 +312,8 @@ export async function createReservation(tenantId: string, actor: Actor, input: u
     select: { id: true, address: true, partyAddress: true },
   });
   if (!client) throw Errors.notFound("Cliente não encontrado");
+  // A equipe pode reservar por telefone e conferir os documentos depois.
+  if (!isStaff(actor.role)) await assertDocsForReservation(tenantId, client.id);
 
   const reservation = await prisma.$transaction(async (tx) => {
     const parsed = ReservationRequestSchema.parse(input);

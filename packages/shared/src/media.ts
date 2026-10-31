@@ -47,3 +47,12 @@ export function isMediaUrl(value: string): boolean {
   if (/^\/api\/media\/[A-Za-z0-9/_.-]+$/.test(value) && !value.includes("..")) return true;
   return /^https:\/\/[a-z0-9.-]+(:\d+)?(\/[^\s<>"']*)?$/i.test(value);
 }
+
+/** RN12: documento aceito só por conteúdo real (JPG, PNG ou PDF), nunca pela extensão. */
+export function sniffDocument(bytes: Uint8Array): "image/jpeg" | "image/png" | "application/pdf" | null {
+  if (bytes.length < 8) return null;
+  if (ascii(bytes, 0, 5) === "%PDF-") return "application/pdf";
+  const m = sniffMedia(bytes);
+  if (m?.mime === "image/jpeg" || m?.mime === "image/png") return m.mime;
+  return null;
+}
