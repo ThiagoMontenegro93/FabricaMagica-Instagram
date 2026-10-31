@@ -1,6 +1,6 @@
 import { MEDIA_LIMITS, type MediaKind } from "@fabrica/shared";
 import { json, route } from "@/server/http";
-import { requireAuth } from "@/server/auth/session";
+import { STAFF_ROLES, requireAuth } from "@/server/auth/session";
 import { rateLimit } from "@/server/rate-limit";
 import { AppError, Errors } from "@/server/errors";
 import { uploadMedia } from "@/server/services/media.service";
@@ -10,9 +10,10 @@ export const dynamic = "force-dynamic";
 
 const KINDS = new Set<MediaKind>(["image", "gif", "video"]);
 
-/** POST /api/uploads/media (multipart: file, kind?) — fotos, vídeo curto e GIF dos temas. */
+/** POST /api/uploads/media (multipart: file, kind?) — fotos, vídeo curto e GIF dos temas e fotos de avaria. */
 export const POST = route(async (req) => {
-  const auth = await requireAuth(req, ["SUPER_ADMIN"]);
+  // A equipe envia fotos de avaria na devolução; só o dono liga mídia a um tema.
+  const auth = await requireAuth(req, [...STAFF_ROLES]);
   rateLimit(`upload:${auth.sub}`, 120, 60 * 60_000);
 
   const length = Number(req.headers.get("content-length") ?? 0);
@@ -28,6 +29,8 @@ export const POST = route(async (req) => {
   if (!(file instanceof File)) throw Errors.badRequest("Campo 'file' ausente");
   const kind = form.get("kind");
   const expected = typeof kind === "string" && KINDS.has(kind as MediaKind) ? (kind as MediaKind) : undefined;
+
+  if (auth.role !== "SUPER_ADMIN" && expected !== "image") throw Errors.forbidden("A equipe só envia fotos (kind=image)");
 
   return json(await uploadMedia(auth.tid, auth.sub, file, expected), { status: 201 });
 });

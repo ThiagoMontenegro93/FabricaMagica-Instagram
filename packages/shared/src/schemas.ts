@@ -250,3 +250,12 @@ export const ReservationListQuerySchema = z.object({
   cursor: z.string().max(40).optional(),
   take: z.coerce.number().int().min(1).max(100).default(30),
 });
+
+/** Avaria registrada na volta do tema (check-out). Valor em centavos. */
+export const DamageReportSchema = z.object({
+  themeId: z.string().min(1).max(64).optional(),
+  note: z.string().trim().min(3, "Descreva a avaria").max(1000),
+  fee: z.number().int().min(0).max(10_000_000),
+  photos: z.array(z.string().url().max(500)).max(6).default([]),
+});
+export type DamageReportInput = z.infer<typeof DamageReportSchema>;

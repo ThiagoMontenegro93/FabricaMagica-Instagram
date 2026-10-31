@@ -44,7 +44,7 @@ export function HeaderNav() {
       {me && !staff && <Link href="/reservas" className={link}>Minhas reservas</Link>}
       {me === null && <Link href="/login" className={link}>Entrar</Link>}
       {me && (
-        <button type="button" onClick={logout} className={`${link} hidden sm:inline-flex`}>
+        <button type="button" onClick={logout} className={link}>
           Sair
         </button>
       )}

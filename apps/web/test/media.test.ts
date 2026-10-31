@@ -51,8 +51,11 @@ describe("Upload de mídia dos temas", () => {
   it("recusa arquivo disfarçado, tipo trocado e quem não é dono", async () => {
     expect((await upload(uploadReq(HTML, "foto.jpg", admin), ctx)).status).toBe(400);
     expect((await upload(uploadReq(JPEG, "video.mp4", admin, "video"), ctx)).status).toBe(400);
+    // Atendente só manda foto (avaria na devolução), nunca vídeo/GIF nem sem declarar o tipo.
     expect((await upload(uploadReq(JPEG, "a.jpg", await session(ATENDENTE)), ctx)).status).toBe(403);
+    expect((await upload(uploadReq(JPEG, "a.mp4", await session(ATENDENTE), "video"), ctx)).status).toBe(403);
     expect(await prisma.mediaAsset.count()).toBe(0);
+    expect((await upload(uploadReq(JPEG, "avaria.jpg", await session(ATENDENTE), "image"), ctx)).status).toBe(201);
   });
 
   it("mesmo arquivo duas vezes não duplica", async () => {
