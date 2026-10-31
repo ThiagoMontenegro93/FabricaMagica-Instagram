@@ -5,7 +5,7 @@
 
 Plataforma de locação de temas de festa (Halloween de luxo, balões, sazonais) e personagens vivos: catálogo, agenda sem overbooking, cadastro 18+ com LGPD, pagamento Pix/cartão via Mercado Pago e painel do dono com estoque, reservas e privacidade de documentos.
 
-A especificação completa está em [`docs/ARQUITETURA.md`](docs/ARQUITETURA.md).
+A especificação completa está em [`docs/ARQUITETURA.md`](docs/ARQUITETURA.md). Para publicar, siga [`docs/COLOCAR-NO-AR.md`](docs/COLOCAR-NO-AR.md).
 
 ## Estrutura
 
@@ -71,22 +71,40 @@ Os testes de integração apagam o banco: eles só rodam se o nome do banco em `
 | POST | `/api/themes` | dono | novo tema (sem limite de quantidade) |
 | PATCH | `/api/themes/:id` | dono; atendente só `status` | editar ou pôr em manutenção |
 | DELETE | `/api/themes/:id` | dono | exclusão lógica (bloqueada com reserva em aberto) |
-| POST | `/api/uploads/media` | dono | envia foto, vídeo curto ou GIF (multipart `file`, `kind`) |
+| POST | `/api/uploads/media` | dono; atendente só foto | envia foto, vídeo curto ou GIF (multipart `file`, `kind`) |
 | GET | `/api/media/<chave>` | público | serve a mídia do armazenamento local (com Range para vídeo) |
 | GET/POST | `/api/characters` | público / dono | personagens vivos |
 | PATCH/DELETE | `/api/characters/:id` | dono | editar, desativar, excluir |
 | GET | `/api/characters/:id/schedule` | equipe | agenda (festas e bloqueios) |
 | POST/DELETE | `/api/characters/:id/block[/:blockId]` | equipe | bloquear ou liberar horário sem sobreposição |
+| POST | `/api/reservations/quote` | público | orçamento do carrinho (taxas, frete, o que está indisponível) |
+| POST | `/api/reservations` | cliente, equipe | reserva e segura o estoque por 30 min |
+| GET | `/api/reservations` | cliente (as suas), equipe (filtros) | lista |
+| GET | `/api/reservations/:idOuCodigo` | dono da reserva, equipe | detalhe |
+| PATCH | `/api/reservations/:id/status` | equipe; cliente só cancela pendente | muda o status (pago manual só o dono) |
+| POST | `/api/reservations/:id/pix` · `/card` | dono da reserva | Pix (QR + copia e cola) ou cartão (Checkout Pro) |
+| POST | `/api/payments/webhook` | Mercado Pago | confirmação com assinatura HMAC, idempotente |
+| GET/POST | `/api/reservations/:id/damages` | equipe | avarias na devolução (multa somada ao total) |
+| DELETE | `/api/reservations/:id/damages/:damageId` | dono | desfaz avaria |
+| GET/POST | `/api/documents` | cliente | situação e envio de documentos (criptografados) |
+| GET | `/api/documents/:id/link` | equipe | link assinado de 15 min (auditado) |
+| GET | `/api/clients/me` · `/api/clients/:id` | cliente · equipe | cadastro próprio · ficha do cliente |
+| POST | `/api/clients/:id/verify-docs` | equipe | marca documentos como conferidos |
+| GET | `/api/admin/dashboard` | equipe (valores só para o dono) | painel do dia |
+| POST | `/api/cron/rotina` | `Bearer CRON_SECRET` | expira reservas, marca atrasos, apaga documentos vencidos |
 
 Sessão: access token JWT de 15 min e refresh opaco de 30 dias, ambos em cookie `httpOnly` `SameSite=Lax`.
 O PWA pode mandar `Authorization: Bearer`. POSTs de outra origem são recusados (anti-CSRF).
 
-Painel do dono: `/admin/temas`, `/admin/personagens`, `/admin/configuracoes`.
+Painel do dono: `/admin` (visão do dia e faturamento), `/admin/reservas`, `/admin/clientes`, `/admin/temas`, `/admin/personagens`, `/admin/configuracoes`.
+Cliente: `/carrinho`, `/reservas`, `/conta/documentos`.
 
 Mídia dos temas: até 20 fotos (JPG/PNG/WEBP, 8 MB cada), 1 vídeo curto de até 30 s (MP4/MOV/WEBM, 40 MB) e 1 GIF (10 MB).
 O tipo real é conferido pelos bytes do arquivo. Em produção no Railway/Render use `STORAGE_DRIVER=s3` (Cloudflare R2), porque o disco desses serviços é apagado a cada deploy.
 
-Telas: [mídia no painel](docs/screens/admin-midia.png), [catálogo](docs/screens/catalogo.png), [tema](docs/screens/tema.png), [admin de temas](docs/screens/admin-temas.png), [novo tema](docs/screens/admin-novo-tema.png), [início](docs/screens/home.png), [cadastro com bloqueio 18+](docs/screens/cadastro-menor.png), [privacidade do dono](docs/screens/admin-privacidade.png).
+Telas novas: [painel do dia](docs/screens/painel.png), [carrinho](docs/screens/carrinho.png), [pagamento Pix](docs/screens/pix.png), [pagamento confirmado](docs/screens/pago.png), [avaria na devolução](docs/screens/avaria.png), [início no celular](docs/screens/celular-inicio.png), [painel no celular](docs/screens/painel-celular.png).
+
+Telas anteriores: [mídia no painel](docs/screens/admin-midia.png), [catálogo](docs/screens/catalogo.png), [tema](docs/screens/tema.png), [admin de temas](docs/screens/admin-temas.png), [novo tema](docs/screens/admin-novo-tema.png), [início](docs/screens/home.png), [cadastro com bloqueio 18+](docs/screens/cadastro-menor.png), [privacidade do dono](docs/screens/admin-privacidade.png).
 
 O CI (GitHub Actions) roda typecheck, testes, migrações num Postgres limpo e o seed duas vezes (idempotência).
 

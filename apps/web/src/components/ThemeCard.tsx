@@ -14,23 +14,45 @@ export interface ThemeCardData {
   offer: ResolvedOffer;
 }
 
-const GRADIENTS = [
-  "from-[#2a0045] to-[#9D00FF]",
-  "from-[#3a0020] to-[#FF00A8]",
-  "from-[#002a1a] to-[#00FF88]",
-  "from-[#3a2a00] to-[#FFD700]",
-];
+/** Brilho de fundo por tema: tons escuros e saturados, sem competir com o ouro. */
+const GLOWS = ["157,0,255", "255,0,168", "0,180,110", "212,140,30", "90,60,255"];
 
-/** Capa do tema: a primeira foto ou, sem foto, um degradê neon com a inicial. */
-export function ThemeCover({ name, photos, className = "" }: { name: string; photos: string[]; className?: string }) {
+function hash(text: string) {
+  let h = 0;
+  for (const ch of text) h = (h * 31 + ch.charCodeAt(0)) >>> 0;
+  return h;
+}
+
+/** Capa do tema: a primeira foto ou, sem foto, uma capa de ateliê com monograma em ouro. */
+export function ThemeCover({ name, photos, className = "", compact = false }: { name: string; photos: string[]; className?: string; compact?: boolean }) {
   if (photos[0]) {
     // eslint-disable-next-line @next/next/no-img-element
     return <img src={photos[0]} alt={name} className={`h-full w-full object-cover ${className}`} loading="lazy" />;
   }
-  const g = GRADIENTS[name.length % GRADIENTS.length];
+  const glow = GLOWS[hash(name) % GLOWS.length];
+  const initial = name.replace(/^(O|A|Os|As) /, "").charAt(0);
   return (
-    <div className={`flex h-full w-full items-center justify-center bg-gradient-to-br ${g} ${className}`}>
-      <span className="font-serif text-6xl text-white/90">{name.replace(/^(O|A|Os|As) /, "").charAt(0)}</span>
+    <div
+      role="img"
+      aria-label={name}
+      className={`relative flex h-full w-full items-center justify-center bg-[#0b0b0b] ${className}`}
+      style={{
+        backgroundImage: `radial-gradient(70% 60% at 50% 40%, rgba(${glow},0.38), transparent 70%), radial-gradient(120% 80% at 50% 120%, rgba(${glow},0.22), transparent 60%)`,
+      }}
+    >
+      {!compact && <div className="absolute inset-4 rounded-xl border border-gold/25" aria-hidden />}
+      {!compact && <div className="absolute inset-[22px] rounded-lg border border-gold/10" aria-hidden />}
+      <span
+        aria-hidden
+        className={`bg-gradient-to-b from-[#f6e3a1] via-gold to-[#8a6a12] bg-clip-text font-serif italic ${compact ? "text-2xl" : "text-7xl"} text-transparent drop-shadow-[0_4px_24px_rgba(212,175,55,0.25)]`}
+      >
+        {initial}
+      </span>
+      {!compact && (
+        <span aria-hidden className="absolute bottom-7 text-[10px] uppercase tracking-[0.35em] text-gold/50">
+          Fábrica Mágica
+        </span>
+      )}
     </div>
   );
 }
@@ -41,9 +63,9 @@ export function ThemeCard({ theme, date }: { theme: ThemeCardData; date?: string
   const soldOut = rents && theme.availableQty === 0;
   const href = `/temas/${theme.slug}${date ? `?data=${date}` : ""}`;
   return (
-    <Link href={href} className="card group block overflow-hidden p-0 transition hover:border-gold/50">
-      <div className="relative aspect-square overflow-hidden rounded-t-2xl">
-        <ThemeCover name={theme.name} photos={theme.photos} className="transition duration-500 group-hover:scale-105" />
+    <Link href={href} className="card group block overflow-hidden p-0 transition-[border-color,transform] duration-200 ease-out hover:-translate-y-0.5 hover:border-gold/50">
+      <div className="relative aspect-[4/3] overflow-hidden rounded-t-2xl sm:aspect-square">
+        <ThemeCover name={theme.name} photos={theme.photos} className="transition-transform duration-500 ease-out group-hover:scale-[1.03]" />
         <div className="absolute left-3 top-3 flex gap-2">
           {theme.isBestseller && <span className="rounded-full bg-gold px-2 py-0.5 text-xs font-semibold text-black">Mais alugado</span>}
           {theme.isNew && <span className="rounded-full bg-neon-pink px-2 py-0.5 text-xs font-semibold text-black">Lançamento</span>}

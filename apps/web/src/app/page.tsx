@@ -73,7 +73,7 @@ export default async function Home({ searchParams }: { searchParams: { categoria
           </form>
         </div>
 
-        <nav className="flex flex-wrap gap-2" aria-label="Alugar ou comprar">
+        <nav className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1 sm:mx-0 sm:flex-wrap sm:px-0" aria-label="Alugar ou comprar">
           {([
             [undefined, "Alugar e comprar"],
             ["aluguel", "Para alugar"],
@@ -82,22 +82,22 @@ export default async function Home({ searchParams }: { searchParams: { categoria
             <Link
               key={label}
               href={qs({ tipo: value })}
-              className={`rounded-full border px-4 py-1.5 text-sm ${tipo === value ? "border-neon-purple bg-neon-purple/20 text-white" : "border-white/10 text-neutral-300 hover:border-neon-purple/60"}`}
+              className={`shrink-0 rounded-full border px-4 py-1.5 text-sm transition-colors ${tipo === value ? "border-neon-purple bg-neon-purple/20 text-white" : "border-white/10 text-neutral-300 hover:border-neon-purple/60"}`}
             >
               {label}
             </Link>
           ))}
         </nav>
 
-        <nav className="flex flex-wrap gap-2" aria-label="Categorias">
-          <Link href={qs({ categoria: undefined })} className={`rounded-full border px-4 py-1.5 text-sm ${!searchParams.categoria ? "border-gold text-gold" : "border-white/10 text-neutral-300 hover:border-gold/50"}`}>
+        <nav className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1 sm:mx-0 sm:flex-wrap sm:px-0" aria-label="Categorias">
+          <Link href={qs({ categoria: undefined })} className={`shrink-0 rounded-full border px-4 py-1.5 text-sm transition-colors ${!searchParams.categoria ? "border-gold text-gold" : "border-white/10 text-neutral-300 hover:border-gold/50"}`}>
             Todos
           </Link>
           {catalog.categories.map((c) => (
             <Link
               key={c.name}
               href={qs({ categoria: c.name })}
-              className={`rounded-full border px-4 py-1.5 text-sm ${searchParams.categoria?.toLowerCase() === c.name.toLowerCase() ? "border-gold text-gold" : "border-white/10 text-neutral-300 hover:border-gold/50"}`}
+              className={`shrink-0 rounded-full border px-4 py-1.5 text-sm transition-colors ${searchParams.categoria?.toLowerCase() === c.name.toLowerCase() ? "border-gold text-gold" : "border-white/10 text-neutral-300 hover:border-gold/50"}`}
             >
               {c.name} <span className="text-neutral-500">({c.count})</span>
             </Link>
@@ -120,10 +120,17 @@ export default async function Home({ searchParams }: { searchParams: { categoria
           <h2 className="font-serif text-3xl text-white">Personagens vivos</h2>
           <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             {characters.map((c) => (
-              <li key={c.id} className="card text-center">
+              <li key={c.id} className="card flex flex-col items-center text-center">
+                <span
+                  aria-hidden
+                  className="mb-3 grid h-16 w-16 place-items-center rounded-full border border-neon-pink/40 bg-[radial-gradient(circle_at_50%_35%,rgba(255,0,168,0.35),rgba(20,0,12,0.9)_70%)] font-serif text-2xl italic text-pink-100 shadow-[0_0_24px_-6px_rgba(255,0,168,0.6)]"
+                >
+                  {c.name.charAt(0)}
+                </span>
                 <p className="font-serif text-xl text-white">{c.name}</p>
                 <p className="mt-1 text-gold">{formatBRL(c.pricePer2h)} <span className="text-xs text-neutral-500">/ 2h</span></p>
                 <p className="text-xs text-neutral-500">+{formatBRL(c.priceExtraHour)} por hora extra</p>
+                <div className="mt-auto w-full pt-1" />
                 <AddCharacterButton characterId={c.id} name={c.name} pricePer2h={c.pricePer2h} priceExtraHour={c.priceExtraHour} />
               </li>
             ))}
