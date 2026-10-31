@@ -2,6 +2,7 @@ import Link from "next/link";
 import { FABRICA_MAGICA, formatBRL, isValidIsoDate, whatsappLink } from "@fabrica/shared";
 import { Logo } from "@/components/Logo";
 import { ThemeCard } from "@/components/ThemeCard";
+import { AddCharacterButton } from "@/components/AddCharacterButton";
 import { currentTenant } from "@/server/tenant";
 import { listThemes } from "@/server/services/theme.service";
 import { listCharacters } from "@/server/services/character.service";
@@ -123,6 +124,7 @@ export default async function Home({ searchParams }: { searchParams: { categoria
                 <p className="font-serif text-xl text-white">{c.name}</p>
                 <p className="mt-1 text-gold">{formatBRL(c.pricePer2h)} <span className="text-xs text-neutral-500">/ 2h</span></p>
                 <p className="text-xs text-neutral-500">+{formatBRL(c.priceExtraHour)} por hora extra</p>
+                <AddCharacterButton characterId={c.id} name={c.name} pricePer2h={c.pricePer2h} priceExtraHour={c.priceExtraHour} />
               </li>
             ))}
           </ul>

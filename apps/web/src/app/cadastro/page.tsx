@@ -20,6 +20,11 @@ export default function CadastroPage() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [done, setDone] = useState<Verification | null>(null);
+  const [nextUrl, setNextUrl] = useState<string | null>(null);
+  useEffect(() => {
+    const n = new URLSearchParams(window.location.search).get("next");
+    if (n && n.startsWith("/") && !n.startsWith("//")) setNextUrl(n);
+  }, []);
 
   const [account, setAccount] = useState({ email: "", password: "" });
   const [person, setPerson] = useState({ name: "", cpf: "", rg: "", birthDate: "", email: "", whatsapp: "", phone2: "" });
@@ -107,11 +112,15 @@ export default function CadastroPage() {
           <WhatsAppCard link={done.link} message={done.message} />
         ) : (
           <div className="card text-sm text-neutral-300">
-            O envio dos documentos (RG/CNH e comprovante) fica disponível na sua área do cliente. Arquivos criptografados AES-256,
-            acesso por link temporário de 15 minutos e auditado.
+            Envie seus documentos (RG/CNH{" "}e, se pedido, comprovante e selfie) na sua área. Os arquivos são criptografados e só a
+            equipe acessa, por link temporário de 15 minutos.
           </div>
         )}
-        <Link href="/" className="btn-ghost">Voltar ao início</Link>
+        <div className="flex flex-wrap justify-center gap-3">
+          {nextUrl && <Link href={nextUrl} className="btn-gold">Continuar minha reserva</Link>}
+          {done.mode === "UPLOAD" && <Link href="/conta/documentos" className="btn-ghost">Enviar documentos</Link>}
+          <Link href="/" className="btn-ghost">Voltar ao início</Link>
+        </div>
       </div>
     );
   }

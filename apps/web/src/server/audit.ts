@@ -17,7 +17,10 @@ export type AuditAction =
   | "CHARACTER_UPDATE"
   | "CHARACTER_DELETE"
   | "CHARACTER_BLOCK"
-  | "CHARACTER_UNBLOCK";
+  | "CHARACTER_UNBLOCK"
+  | "RESERVATION_CREATE"
+  | "RESERVATION_STATUS"
+  | "RESERVATION_EXPIRED";
 
 /** Grava no AuditLog e também no log JSON (RF12, LGPD). */
 export async function audit(input: {

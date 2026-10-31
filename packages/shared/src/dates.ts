@@ -37,3 +37,26 @@ export function addHours(date: Date, hours: number): Date {
 export function addMinutes(date: Date, minutes: number): Date {
   return new Date(date.getTime() + minutes * 60_000);
 }
+
+/** Fuso da loja (Rio de Janeiro, sem horário de verão desde 2019). */
+export const STORE_UTC_OFFSET = "-03:00";
+
+/** Dia civil de hoje no Rio de Janeiro, "YYYY-MM-DD". */
+export function todayInStore(now: Date = new Date()): string {
+  return new Date(now.getTime() - 3 * 3_600_000).toISOString().slice(0, 10);
+}
+
+/** Dia civil no Rio de Janeiro de um instante. */
+export function storeDateOf(instant: Date): string {
+  return todayInStore(instant);
+}
+
+/** Dias inteiros entre duas datas "YYYY-MM-DD" (b - a). */
+export function daysBetween(a: string, b: string): number {
+  return Math.round((parseIsoDate(b).getTime() - parseIsoDate(a).getTime()) / 86_400_000);
+}
+
+/** "2026-10-31" -> "31/10/2026". */
+export function formatDateBR(iso: string): string {
+  return iso.split("-").reverse().join("/");
+}
