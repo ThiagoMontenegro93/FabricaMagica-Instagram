@@ -2,6 +2,7 @@ import { prisma } from "@fabrica/db";
 import { FABRICA_MAGICA, TenantSettingsPatchSchema, whatsappLink } from "@fabrica/shared";
 import { audit } from "../audit";
 import { Errors } from "../errors";
+import { paymentsMode } from "./payment.service";
 
 const SETTINGS_FIELDS = {
   hostSensitiveDocs: true,
@@ -44,6 +45,7 @@ export async function getPublicSettings(tenantId: string) {
     whatsappLink: whatsappLink(undefined, tenant.whatsapp),
     slogan: FABRICA_MAGICA.slogan,
     deliveryFee: settings.deliveryFeeBase,
+    payments: paymentsMode(),
     defaultOfferMode: settings.defaultOfferMode,
     allowPickup: settings.allowPickup,
     allowDelivery: settings.allowDelivery,
