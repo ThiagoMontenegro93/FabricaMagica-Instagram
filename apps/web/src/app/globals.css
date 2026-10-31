@@ -5,33 +5,118 @@
 :root {
   --font-serif: "Playfair Display", "Cormorant Garamond", Georgia, "Times New Roman", serif;
   --font-sans: "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  /* Curvas fortes: as do CSS padrão são fracas demais para UI. */
+  --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+  --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
   color-scheme: dark;
 }
 
 body {
   @apply bg-night text-neutral-100 font-sans antialiased;
+  background-image:
+    radial-gradient(60rem 30rem at 50% -10rem, rgba(157, 0, 255, 0.12), transparent 70%),
+    radial-gradient(40rem 20rem at 100% 30rem, rgba(255, 0, 168, 0.05), transparent 70%);
+  background-attachment: fixed;
+}
+
+::selection {
+  background: rgba(212, 175, 55, 0.35);
+}
+
+:focus-visible {
+  outline: 2px solid #d4af37;
+  outline-offset: 2px;
 }
 
 @layer components {
   .card {
-    @apply rounded-2xl border border-white/5 bg-card p-6;
+    @apply rounded-2xl border border-white/[0.06] bg-card p-6;
+    box-shadow: 0 1px 0 rgba(255, 255, 255, 0.03) inset, 0 20px 40px -24px rgba(0, 0, 0, 0.8);
   }
   .field {
-    @apply w-full rounded-lg border border-white/10 bg-field px-3 py-2 text-neutral-100 outline-none transition placeholder:text-neutral-500 focus:border-gold focus:ring-1 focus:ring-gold;
+    @apply w-full rounded-lg border border-white/10 bg-field px-3 py-2 text-neutral-100 outline-none placeholder:text-neutral-500 focus:border-gold focus:ring-1 focus:ring-gold;
+    transition: border-color 150ms ease, box-shadow 150ms ease;
   }
   .label {
     @apply mb-1 block text-sm text-neutral-300;
   }
   .btn-gold {
-    @apply inline-flex items-center justify-center rounded-full bg-gradient-to-r from-orange-500 to-gold px-6 py-2.5 font-semibold text-black transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-50;
+    @apply inline-flex items-center justify-center gap-2 rounded-full bg-gradient-to-r from-orange-500 to-gold px-6 py-2.5 font-semibold text-black hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-50;
+    transition: transform 160ms var(--ease-out), filter 150ms ease, opacity 150ms ease;
   }
   .btn-ghost {
-    @apply inline-flex items-center justify-center rounded-full border border-gold/40 px-6 py-2.5 text-gold transition hover:border-gold hover:bg-gold/10;
+    @apply inline-flex items-center justify-center gap-2 rounded-full border border-gold/40 px-6 py-2.5 text-gold hover:border-gold hover:bg-gold/10 disabled:cursor-not-allowed disabled:opacity-50;
+    transition: transform 160ms var(--ease-out), background-color 150ms ease, border-color 150ms ease;
+  }
+  .btn-danger {
+    @apply inline-flex items-center justify-center gap-2 rounded-full border border-red-400/40 px-5 py-2 text-sm text-red-200 hover:bg-red-950/40 disabled:opacity-50;
+    transition: transform 160ms var(--ease-out), background-color 150ms ease;
   }
   .alert-error {
     @apply rounded-lg border border-red-500/40 bg-red-950/40 px-4 py-3 text-sm text-red-200;
   }
+  .alert-ok {
+    @apply rounded-lg border border-neon-green/40 bg-green-950/30 px-4 py-3 text-sm text-neon-green;
+  }
   .neon-frame {
     @apply rounded-2xl border-2 border-neon-purple shadow-neon;
+  }
+  .chip {
+    @apply inline-flex items-center rounded-full border px-3 py-1 text-xs font-medium;
+  }
+}
+
+@layer utilities {
+  /* Botões respondem ao toque. */
+  .press {
+    transition-property: transform;
+    transition-duration: 160ms;
+    transition-timing-function: var(--ease-out);
+  }
+  .press:active:not(:disabled),
+  .btn-gold:active:not(:disabled),
+  .btn-ghost:active:not(:disabled),
+  .btn-danger:active:not(:disabled) {
+    transform: scale(0.97);
+  }
+  .pop-in {
+    animation: pop-in 220ms var(--ease-out);
+  }
+  .fade-up {
+    animation: fade-up 420ms var(--ease-out) both;
+    animation-delay: calc(var(--i, 0) * 50ms);
+  }
+}
+
+@keyframes pop-in {
+  from {
+    opacity: 0;
+    transform: scale(0.8);
+  }
+}
+
+@keyframes fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fade-up,
+  .pop-in {
+    animation: fade-in 200ms ease both;
+  }
+  .press:active:not(:disabled),
+  .btn-gold:active:not(:disabled),
+  .btn-ghost:active:not(:disabled),
+  .btn-danger:active:not(:disabled) {
+    transform: none;
+  }
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
   }
 }

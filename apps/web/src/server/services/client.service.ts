@@ -120,3 +120,11 @@ export async function listClients(
     nextCursor: hasMore ? page[page.length - 1]?.id : null,
   };
 }
+
+/** Cadastro do próprio cliente, para o checkout preencher endereço e contato. */
+export async function getMyClient(tenantId: string, userId: string) {
+  return prisma.client.findFirst({
+    where: { tenantId, userId, deletedAt: null },
+    select: { id: true, name: true, email: true, whatsapp: true, address: true, partyAddress: true, docsVerifiedAt: true },
+  });
+}

@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import Link from "next/link";
 import { FABRICA_MAGICA, whatsappLink } from "@fabrica/shared";
 import { Logo } from "@/components/Logo";
+import { HeaderNav } from "@/components/HeaderNav";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -15,15 +16,12 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="pt-BR">
       <body className="min-h-screen">
-        <header className="border-b border-white/5">
-          <nav className="mx-auto flex max-w-6xl items-center justify-between px-4 py-4">
+        <header className="sticky top-0 z-30 border-b border-white/5 bg-night/80 backdrop-blur-md">
+          <nav className="mx-auto flex max-w-6xl items-center justify-between gap-3 px-4 py-3">
             <Link href="/" aria-label="Início">
               <Logo />
             </Link>
-            <div className="flex items-center gap-4 text-sm">
-              <Link href="/cadastro" className="text-neutral-300 hover:text-gold">Cadastro</Link>
-              <Link href="/login" className="text-neutral-300 hover:text-gold">Entrar</Link>
-            </div>
+            <HeaderNav />
           </nav>
         </header>
         <main className="mx-auto max-w-6xl px-4 py-10">{children}</main>

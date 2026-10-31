@@ -49,6 +49,9 @@ export default async function ThemePage({ params, searchParams }: { params: { sl
         )}
 
         <OfferPicker
+          themeId={theme.id}
+          slug={theme.slug}
+          photo={theme.photos[0] ?? null}
           themeName={theme.name}
           dailyPrice={theme.dailyPrice}
           weekendMultiplier={multiplier}
@@ -67,7 +70,7 @@ export default async function ThemePage({ params, searchParams }: { params: { sl
           </div>
         )}
 
-        <p className="text-xs text-neutral-500">O pagamento online (Pix e cartão) chega na próxima etapa.</p>
+        <p className="text-xs text-neutral-500">Reserve pelo carrinho e pague com Pix ou cartão. O kit fica guardado por 30 minutos enquanto você paga.</p>
       </div>
     </article>
   );

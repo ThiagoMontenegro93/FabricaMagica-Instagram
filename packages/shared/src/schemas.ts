@@ -191,37 +191,62 @@ export const CatalogQuerySchema = z.object({
 });
 
 // --- Reserva (RF04, RF05) ---
+const startsAtSchema = z.coerce.date({ errorMap: () => ({ message: "Horário inválido" }) });
+
 export const ReservationRequestSchema = z
   .object({
+    /** Só a equipe informa: reserva manual para um cliente cadastrado. */
+    clientId: z.string().min(1).optional(),
     eventDate: isoDate,
-    returnDate: isoDate,
+    /** Na venda não há devolução: vale a data de entrega/retirada. */
+    returnDate: isoDate.optional(),
     dealType: z.enum(DEAL_TYPES).default("ALUGUEL"),
     deliveryType: z.enum(DELIVERY_TYPES),
+    /** Sem endereço, usa o da festa (ou o residencial) do cadastro. */
     deliveryAddress: AddressSchema.optional(),
-    themes: z.array(z.object({ themeId: z.string().min(1), quantity: z.number().int().min(1).default(1) })).default([]),
+    notes: z.string().trim().max(1000).optional(),
+    themes: z
+      .array(z.object({ themeId: z.string().min(1), quantity: z.number().int().min(1).max(20).default(1) }))
+      .max(30)
+      .default([]),
     characters: z
       .array(
         z.object({
           characterId: z.string().min(1),
-          startsAt: z.coerce.date(),
+          startsAt: startsAtSchema,
           extraHours: z.number().int().min(0).max(6).default(0),
         }),
       )
+      .max(10)
       .default([]),
   })
   .superRefine((r, ctx) => {
-    if (r.returnDate < r.eventDate) {
+    if (r.returnDate && r.returnDate < r.eventDate) {
       ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["returnDate"], message: "Devolução antes do evento" });
     }
     if (r.themes.length === 0 && r.characters.length === 0) {
       ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["themes"], message: "Adicione ao menos um tema ou personagem" });
     }
-    if (r.deliveryType === "ENTREGA" && !r.deliveryAddress) {
-      ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["deliveryAddress"], message: "Informe o endereço de entrega" });
+    if (r.dealType === "VENDA" && r.characters.length > 0) {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["characters"], message: "Personagens vivos só entram em pedidos de aluguel" });
+    }
+    const ids = r.themes.map((t) => t.themeId);
+    if (new Set(ids).size !== ids.length) {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["themes"], message: "Tema repetido no pedido: ajuste a quantidade" });
     }
   });
+export type ReservationRequest = z.output<typeof ReservationRequestSchema>;
 
 export const ReservationStatusPatchSchema = z.object({
   status: z.enum(RESERVATION_STATUSES),
   note: z.string().trim().max(1000).optional(),
+});
+
+export const ReservationListQuerySchema = z.object({
+  status: z.enum(RESERVATION_STATUSES).optional(),
+  from: isoDate.optional(),
+  to: isoDate.optional(),
+  q: z.string().trim().max(80).optional(),
+  cursor: z.string().max(40).optional(),
+  take: z.coerce.number().int().min(1).max(100).default(30),
 });

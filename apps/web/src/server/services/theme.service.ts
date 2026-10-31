@@ -1,4 +1,4 @@
-import { prisma } from "@fabrica/db";
+import { prisma, type Prisma } from "@fabrica/db";
 import {
   CatalogQuerySchema,
   PartyThemePatchSchema,
@@ -54,11 +54,14 @@ export async function themeAvailability(
   themes: { id: string; totalQty: number; status: string }[],
   period: { eventDate: string; returnDate: string },
   now = new Date(),
+  db: Pick<Prisma.TransactionClient, "reservationTheme"> = prisma,
 ): Promise<Map<string, number>> {
-  const rows = await prisma.reservationTheme.findMany({
+  const rows = await db.reservationTheme.findMany({
     where: {
       themeId: { in: themes.map((t) => t.id) },
       reservation: {
+        // Venda baixa o estoque de venda (saleQty), não os kits de aluguel.
+        dealType: "ALUGUEL",
         status: { in: STOCK_STATUSES },
         eventDate: { lte: dateOnly(period.returnDate) },
         returnDate: { gte: dateOnly(period.eventDate) },
@@ -92,7 +95,7 @@ export async function themeAvailability(
   );
 }
 
-async function offerDefaults(tenantId: string): Promise<OfferDefaults> {
+export async function offerDefaults(tenantId: string): Promise<OfferDefaults> {
   return prisma.tenantSettings.findUniqueOrThrow({
     where: { tenantId },
     select: { defaultOfferMode: true, allowPickup: true, allowDelivery: true, deliveryFeeBase: true },

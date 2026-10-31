@@ -10,3 +10,4 @@ export * from "./schemas";
 export * from "./slug";
 export * from "./media";
 export * from "./offer";
+export * from "./reservation";

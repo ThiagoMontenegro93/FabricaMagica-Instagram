@@ -1,6 +1,8 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
+import { cart } from "@/lib/cart";
 import {
   calculateQuote,
   formatBRL,
@@ -11,6 +13,9 @@ import {
 } from "@fabrica/shared";
 
 interface Props {
+  themeId: string;
+  slug: string;
+  photo: string | null;
   themeName: string;
   dailyPrice: number;
   weekendMultiplier: number;
@@ -29,8 +34,9 @@ const DELIVERY_LABEL: Record<DeliveryType, { title: string; hint: string }> = {
 };
 
 /** Escolha de Alugar/Comprar e Retirar/Receber, com o total na hora. */
-export function OfferPicker({ themeName, dailyPrice, weekendMultiplier, offer, date, availableForRent, whatsapp }: Props) {
+export function OfferPicker({ themeId, slug, photo, themeName, dailyPrice, weekendMultiplier, offer, date, availableForRent, whatsapp }: Props) {
   const [deal, setDeal] = useState<DealType>(offer.deals[0] ?? "ALUGUEL");
+  const [added, setAdded] = useState<null | { replaced: boolean }>(null);
   const [delivery, setDelivery] = useState<DeliveryType>(offer.deliveryTypes.includes("ENTREGA") ? "ENTREGA" : offer.deliveryTypes[0]!);
 
   if (offer.deals.length === 0) {
@@ -129,8 +135,31 @@ export function OfferPicker({ themeName, dailyPrice, weekendMultiplier, offer, d
         deal === "ALUGUEL" && availableForRent !== null && <p className="text-neon-green">Disponível nesta data.</p>
       )}
 
-      <a className="btn-gold w-full justify-center" href={whatsappLink(msg, whatsapp)} target="_blank" rel="noopener noreferrer">
-        {deal === "VENDA" ? "Quero comprar pelo WhatsApp" : "Quero reservar pelo WhatsApp"}
+      <button
+        type="button"
+        className="btn-gold w-full"
+        disabled={soldOut}
+        onClick={() =>
+          setAdded(
+            cart.addTheme(
+              { themeId, slug, name: themeName, photo, dailyPrice, salePrice: offer.salePrice },
+              deal,
+              delivery,
+              date,
+            ),
+          )
+        }
+      >
+        {deal === "VENDA" ? "Adicionar à compra" : "Adicionar à festa"}
+      </button>
+      {added && (
+        <p className="pop-in flex flex-wrap items-center justify-between gap-2 rounded-lg border border-neon-green/30 bg-green-950/20 px-3 py-2 text-sm text-neon-green" role="status">
+          <span>{added.replaced ? "Começamos um carrinho novo com este tema." : "Tema no carrinho."}</span>
+          <Link href="/carrinho" className="font-semibold underline-offset-4 hover:underline">Ver carrinho e reservar →</Link>
+        </p>
+      )}
+      <a className="block text-center text-sm text-neutral-400 transition-colors hover:text-gold" href={whatsappLink(msg, whatsapp)} target="_blank" rel="noopener noreferrer">
+        Prefere falar com a gente? Chamar no WhatsApp
       </a>
     </div>
   );
