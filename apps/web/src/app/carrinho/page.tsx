@@ -131,7 +131,7 @@ export default function CarrinhoPage() {
           {c.themes.map((t, i) => (
             <div key={t.themeId} className="card fade-up flex gap-4 p-4" style={{ ["--i" as string]: i }}>
               <Link href={`/temas/${t.slug}`} className="h-24 w-24 shrink-0 overflow-hidden rounded-xl">
-                <ThemeCover name={t.name} photos={t.photo ? [t.photo] : []} />
+                <ThemeCover name={t.name} photos={t.photo ? [t.photo] : []} compact />
               </Link>
               <div className="flex min-w-0 flex-1 flex-col justify-between gap-2">
                 <div className="flex items-start justify-between gap-2">

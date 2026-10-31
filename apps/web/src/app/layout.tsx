@@ -3,7 +3,12 @@ import Link from "next/link";
 import { FABRICA_MAGICA, whatsappLink } from "@fabrica/shared";
 import { Logo } from "@/components/Logo";
 import { HeaderNav } from "@/components/HeaderNav";
+import { Inter, Playfair_Display } from "next/font/google";
 import "./globals.css";
+
+// Fontes servidas pelo próprio site (next/font baixa no build): sem pedido ao Google no navegador do cliente.
+const serif = Playfair_Display({ subsets: ["latin"], weight: ["400", "600", "700"], style: ["normal", "italic"], variable: "--font-playfair", display: "swap" });
+const sans = Inter({ subsets: ["latin"], variable: "--font-inter", display: "swap" });
 
 export const metadata: Metadata = {
   title: "A Fábrica Mágica · Locação Premium de Festas",
@@ -14,8 +19,8 @@ export const viewport: Viewport = { themeColor: "#050505" };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="pt-BR">
-      <body className="min-h-screen">
+    <html lang="pt-BR" className={`${serif.variable} ${sans.variable}`}>
+      <body className="flex min-h-screen flex-col">
         <header className="sticky top-0 z-30 border-b border-white/5 bg-night/80 backdrop-blur-md">
           <nav className="mx-auto flex max-w-6xl items-center justify-between gap-3 px-4 py-3">
             <Link href="/" aria-label="Início">
@@ -24,7 +29,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             <HeaderNav />
           </nav>
         </header>
-        <main className="mx-auto max-w-6xl px-4 py-10">{children}</main>
+        <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-10">{children}</main>
         <footer className="border-t border-white/5 px-4 py-8 text-center text-xs text-neutral-500">
           <p>{FABRICA_MAGICA.address}</p>
           <p className="mt-1">

@@ -30,7 +30,7 @@ export function ReservationSummary({ r }: { r: ReservationDTO }) {
         {r.themes.map((t) => (
           <li key={t.id} className="flex items-center gap-3 py-3">
             <div className="h-14 w-14 shrink-0 overflow-hidden rounded-lg">
-              <ThemeCover name={t.theme.name} photos={t.theme.photos} />
+              <ThemeCover name={t.theme.name} photos={t.theme.photos} compact />
             </div>
             <div className="flex-1">
               <p className="text-white">{t.theme.name}{t.quantity > 1 && <span className="text-neutral-400"> × {t.quantity}</span>}</p>

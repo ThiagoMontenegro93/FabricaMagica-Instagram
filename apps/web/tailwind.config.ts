@@ -2,6 +2,8 @@ import type { Config } from "tailwindcss";
 
 const config: Config = {
   content: ["./src/**/*.{ts,tsx}"],
+  // hover: só em quem tem mouse; no celular o toque não deixa o card "preso" no hover.
+  future: { hoverOnlyWhenSupported: true },
   theme: {
     extend: {
       colors: {

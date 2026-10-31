@@ -34,8 +34,12 @@ function LoginForm() {
   }
 
   return (
-    <form onSubmit={onSubmit} className="card mx-auto max-w-md space-y-4">
-      <h1 className="font-serif text-3xl text-white">Entrar</h1>
+    <form onSubmit={onSubmit} className="card pop-in mx-auto mt-6 max-w-md space-y-5 sm:p-8">
+      <div className="space-y-1 text-center">
+        <p className="text-[11px] uppercase tracking-[0.35em] text-neutral-500">Bem-vindo de volta</p>
+        <h1 className="font-serif text-4xl text-white">Entrar</h1>
+        <p className="font-serif italic text-gold/80">Alugue o Medo. Celebre o Luxo.</p>
+      </div>
       {error && <p className="alert-error" role="alert">{error}</p>}
       <div>
         <label className="label" htmlFor="email">E-mail</label>
@@ -45,7 +49,7 @@ function LoginForm() {
         <label className="label" htmlFor="password">Senha</label>
         <input className="field" id="password" name="password" type="password" autoComplete="current-password" required />
       </div>
-      <button className="btn-gold w-full" disabled={loading}>{loading ? "Entrando..." : "Entrar"}</button>
+      <button className="btn-gold w-full py-3" disabled={loading}>{loading ? "Entrando..." : "Entrar"}</button>
       <p className="text-center text-sm text-neutral-400">
         Ainda não tem conta? <Link href="/cadastro" className="text-gold hover:underline">Cadastre-se</Link>
       </p>
