@@ -24,7 +24,10 @@ export default function MinhasReservasPage() {
 
   return (
     <div className="mx-auto max-w-3xl space-y-6">
-      <h1 className="fade-up font-serif text-4xl text-white">Minhas reservas</h1>
+      <div className="fade-up flex flex-wrap items-end justify-between gap-3">
+        <h1 className="font-serif text-4xl text-white">Minhas reservas</h1>
+        <Link href="/conta/documentos" className="text-sm text-neutral-400 transition-colors hover:text-gold">Meus documentos →</Link>
+      </div>
       {error && <p className="alert-error">{error}</p>}
       {!items && !error && <p className="text-neutral-400">Carregando...</p>}
       {items?.length === 0 && (

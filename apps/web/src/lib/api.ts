@@ -4,15 +4,17 @@ export class ApiError extends Error {
     public status: number,
     message: string,
     public issues?: { path: string; message: string }[],
+    public code?: string,
   ) {
     super(message);
   }
 }
 
 export async function api<T>(path: string, init: RequestInit = {}, retry = true): Promise<T> {
+  const isForm = typeof FormData !== "undefined" && init.body instanceof FormData;
   const res = await fetch(path, {
     ...init,
-    headers: { "Content-Type": "application/json", ...(init.headers ?? {}) },
+    headers: { ...(isForm ? {} : { "Content-Type": "application/json" }), ...(init.headers ?? {}) },
     credentials: "same-origin",
   });
   if (res.status === 401 && retry && !path.startsWith("/api/auth/")) {
@@ -21,7 +23,7 @@ export async function api<T>(path: string, init: RequestInit = {}, retry = true)
   }
   const body = await res.json().catch(() => ({}));
   if (!res.ok) {
-    throw new ApiError(res.status, body?.error?.message ?? "Erro inesperado", body?.error?.issues);
+    throw new ApiError(res.status, body?.error?.message ?? "Erro inesperado", body?.error?.issues, body?.error?.code);
   }
   return body as T;
 }

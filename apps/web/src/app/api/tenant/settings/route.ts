@@ -1,4 +1,5 @@
 import { clientIp, json, readJson, route } from "@/server/http";
+import { docsEncryptionReady } from "@/server/crypto-docs";
 import { STAFF_ROLES, requireAuth } from "@/server/auth/session";
 import { getSettings, updateSettings } from "@/server/services/settings.service";
 
@@ -8,7 +9,7 @@ export const dynamic = "force-dynamic";
 /** GET /api/tenant/settings — equipe vê as configurações. */
 export const GET = route(async (req) => {
   const auth = await requireAuth(req, STAFF_ROLES);
-  return json({ settings: await getSettings(auth.tid) });
+  return json({ settings: await getSettings(auth.tid), docsEncryptionReady: docsEncryptionReady() });
 });
 
 /** PATCH /api/tenant/settings — só o dono altera privacidade e taxas (RF12). */

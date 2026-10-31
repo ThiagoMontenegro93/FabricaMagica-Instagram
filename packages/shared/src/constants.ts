@@ -84,3 +84,26 @@ export const MAX_DOCUMENT_BYTES = 5 * 1024 * 1024;
 export const ALLOWED_DOCUMENT_MIME = ["image/jpeg", "image/png", "application/pdf"] as const;
 
 export const MIN_AGE_MESSAGE = "Cadastro permitido apenas para maiores de 18 anos";
+
+export const DOCUMENT_KINDS = ["RG_FRENTE", "RG_VERSO", "COMPROVANTE_RESIDENCIA", "SELFIE"] as const;
+export type DocumentKind = (typeof DOCUMENT_KINDS)[number];
+
+export const DOCUMENT_LABELS: Record<DocumentKind, string> = {
+  RG_FRENTE: "RG ou CNH (frente)",
+  RG_VERSO: "RG ou CNH (verso)",
+  COMPROVANTE_RESIDENCIA: "Comprovante de residência",
+  SELFIE: "Selfie segurando o documento",
+};
+
+/** Documentos que a loja exige conforme as configurações de privacidade. */
+export function requiredDocuments(s: { requireProof: boolean; requireSelfie: boolean }): DocumentKind[] {
+  return [
+    "RG_FRENTE",
+    "RG_VERSO",
+    ...(s.requireProof ? (["COMPROVANTE_RESIDENCIA"] as const) : []),
+    ...(s.requireSelfie ? (["SELFIE"] as const) : []),
+  ];
+}
+
+/** Validade do link temporário de documento (RF12). */
+export const DOCUMENT_LINK_MINUTES = 15;

@@ -109,6 +109,7 @@ export default function CarrinhoPage() {
     } catch (e) {
       if (e instanceof ApiError && e.status === 401) return router.push("/login?next=/carrinho");
       if (e instanceof ApiError && e.status === 409 && e.message.includes("cadastro")) return router.push("/cadastro?next=/carrinho");
+      if (e instanceof ApiError && e.code === "DOCS_REQUIRED") return router.push("/conta/documentos?next=/carrinho");
       setError(e instanceof ApiError ? e.message : "Erro ao reservar");
     } finally {
       setLoading(false);

@@ -8,6 +8,7 @@ import {
 } from "@fabrica/shared";
 import { Errors } from "../errors";
 import { audit } from "../audit";
+import { documentStatus } from "./document.service";
 
 /** Contrato vigente aceito no cadastro (versionar quando o texto mudar). */
 export const CONTRACT_VERSION = "2026-10-v1";
@@ -127,4 +128,28 @@ export async function getMyClient(tenantId: string, userId: string) {
     where: { tenantId, userId, deletedAt: null },
     select: { id: true, name: true, email: true, whatsapp: true, address: true, partyAddress: true, docsVerifiedAt: true },
   });
+}
+
+/** Ficha do cliente para a equipe: dados, documentos (sem conteúdo) e últimas reservas. */
+export async function getClientDetail(tenantId: string, actor: { id: string; role: Role }, id: string, ip?: string) {
+  const c = await prisma.client.findFirst({
+    where: { id, tenantId, deletedAt: null },
+    select: {
+      id: true, name: true, cpf: true, rg: true, birthDate: true, email: true, whatsapp: true, phone2: true,
+      address: true, partyAddress: true, docsVerifiedAt: true, contractVersion: true, lgpdConsentAt: true, createdAt: true,
+      reservations: { select: { id: true, code: true, status: true, dealType: true, eventDate: true, totalPrice: true }, orderBy: { eventDate: "desc" }, take: 20 },
+    },
+  });
+  if (!c) throw Errors.notFound("Cliente não encontrado");
+  await audit({ tenantId, action: "VIEW_CLIENT", actorId: actor.id, targetId: c.id, ip });
+  const docs = await documentStatus(tenantId, c.id);
+  return {
+    client: {
+      ...c,
+      cpf: actor.role === "SUPER_ADMIN" ? formatCPF(c.cpf) : maskCPF(c.cpf),
+      rg: actor.role === "SUPER_ADMIN" ? c.rg : "***",
+      reservations: c.reservations.map((r) => ({ ...r, eventDate: r.eventDate.toISOString().slice(0, 10) })),
+    },
+    documents: docs,
+  };
 }
