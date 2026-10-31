@@ -13,6 +13,12 @@ const EnvSchema = z.object({
   DOCS_DIR: z.string().optional(),
   /** Segredo das rotinas agendadas (/api/cron/*). */
   CRON_SECRET: z.string().min(16).optional(),
+  /** Mercado Pago (produção ou credenciais de teste). Sem token, o pagamento é combinado pelo WhatsApp. */
+  MERCADOPAGO_ACCESS_TOKEN: z.string().optional(),
+  /** Chave secreta do webhook (Suas integrações > Webhooks). Obrigatória em produção. */
+  MERCADOPAGO_WEBHOOK_SECRET: z.string().optional(),
+  /** "1" liga o simulador de pagamento fora de produção (demonstração e testes). */
+  PAYMENTS_SIMULATOR: z.string().optional(),
 });
 
 export type Env = z.infer<typeof EnvSchema>;
